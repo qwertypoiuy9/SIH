@@ -1,0 +1,6 @@
+{
+  "name": "KisanFlow",
+  "description": "Multichannel government agricultural procurement access platform: web, phone IVR, voice assistant, and SMS.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
