@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useKisanFlow } from '../../context/KisanFlowContext';
 import {
   Landmark,
@@ -16,11 +16,26 @@ import {
   ChevronRight,
   Menu,
   X,
-  TrendingUp,
   Clock,
   CheckCircle2,
+  Bot,
+  Sparkles,
+  Loader2,
+  TrendingUp,
+  ShieldAlert,
+  Zap,
+  RefreshCw,
 } from 'lucide-react';
 import { GovernmentSidebarView } from '../../types';
+import { getBottleneckPredictions, BottleneckPrediction } from '../../services/aiAssistantService';
+import { WeatherDashboard } from '../weather/WeatherDashboard';
+
+const SEVERITY_STYLES: Record<BottleneckPrediction['severity'], { badge: string; border: string; bg: string; icon: string }> = {
+  LOW: { badge: 'bg-emerald-100 text-emerald-800', border: 'border-emerald-300', bg: 'bg-emerald-50', icon: '🟢' },
+  MEDIUM: { badge: 'bg-amber-100 text-amber-800', border: 'border-amber-300', bg: 'bg-amber-50', icon: '🟡' },
+  HIGH: { badge: 'bg-orange-100 text-orange-800', border: 'border-orange-400', bg: 'bg-orange-50', icon: '🟠' },
+  CRITICAL: { badge: 'bg-red-100 text-red-800', border: 'border-red-400', bg: 'bg-red-50', icon: '🔴' },
+};
 
 export const GovernmentDashboard: React.FC = () => {
   const {
@@ -36,22 +51,45 @@ export const GovernmentDashboard: React.FC = () => {
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // Real database metrics across all centres
+  // Real database metrics
   const totalRegistrations = registrations.length;
   const totalCompleted = registrations.filter(r => r.procurement_status === 'PROCUREMENT_COMPLETED').length;
   const totalWaiting = registrations.filter(r => r.current_stage === 'GATE_ENTRY').length;
   const totalProcessing = registrations.filter(
-    r => r.current_stage !== 'GATE_ENTRY' && r.procurement_status !== 'PROCUREMENT_COMPLETED' && r.procurement_status !== 'QUALITY_REJECTED'
+    r => r.current_stage !== 'GATE_ENTRY' &&
+      r.procurement_status !== 'PROCUREMENT_COMPLETED' &&
+      r.procurement_status !== 'QUALITY_REJECTED'
   ).length;
-
   const totalQuantityQuintals = registrations
     .filter(r => r.procurement_status === 'PROCUREMENT_COMPLETED')
     .reduce((acc, r) => acc + (r.quantity_quintals || 0), 0);
-
   const totalDisbursedMSP = totalQuantityQuintals * 1950;
 
-  // Bottleneck detection
-  const delayedRegistrations = registrations.filter(r => (r.delay_minutes || 0) > 30);
+  // ── AI Bottleneck Prediction state ──
+  const [predictions, setPredictions] = useState<BottleneckPrediction[]>([]);
+  const [isLoadingPredictions, setIsLoadingPredictions] = useState(false);
+  const [predictionsLoaded, setPredictionsLoaded] = useState(false);
+  const [predictionTimestamp, setPredictionTimestamp] = useState<string>('');
+
+  const loadPredictions = useCallback(async () => {
+    setIsLoadingPredictions(true);
+    try {
+      const results = await getBottleneckPredictions({ registrations, centres });
+      setPredictions(results);
+      setPredictionsLoaded(true);
+      setPredictionTimestamp(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.warn('Bottleneck prediction error:', err);
+    } finally {
+      setIsLoadingPredictions(false);
+    }
+  }, [registrations.length, centres.length]);
+
+  useEffect(() => {
+    if (govtView === 'bottlenecks' && !predictionsLoaded) {
+      loadPredictions();
+    }
+  }, [govtView, predictionsLoaded, loadPredictions]);
 
   const navItems: { id: GovernmentSidebarView; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: '🏠 Overview', icon: <Landmark className="w-4 h-4" /> },
@@ -62,7 +100,7 @@ export const GovernmentDashboard: React.FC = () => {
     { id: 'procurement_monitoring', label: '⚙️ Procurement Monitoring', icon: <Activity className="w-4 h-4" /> },
     { id: 'payments', label: '💰 Payments', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'reports_analytics', label: '📊 Reports & Analytics', icon: <BarChart3 className="w-4 h-4" /> },
-    { id: 'bottlenecks', label: '🚨 Bottlenecks & Alerts', icon: <AlertTriangle className="w-4 h-4" /> },
+    { id: 'bottlenecks', label: '🚨 AI Bottleneck Alerts', icon: <AlertTriangle className="w-4 h-4" /> },
     { id: 'notifications', label: '🔔 Notifications', icon: <Bell className="w-4 h-4" /> },
     { id: 'voice_assistant', label: '🎙️ Voice Assistant', icon: <Mic className="w-4 h-4" /> },
     { id: 'profile', label: '👤 Profile', icon: <User className="w-4 h-4" /> },
@@ -72,27 +110,18 @@ export const GovernmentDashboard: React.FC = () => {
     <div className="min-h-screen flex bg-stone-100 text-stone-900 font-sans">
       {/* MOBILE TOGGLE */}
       <div className="lg:hidden fixed top-3 left-3 z-50">
-        <button
-          onClick={() => setMobileNavOpen(!mobileNavOpen)}
-          className="p-2.5 bg-blue-900 text-white rounded-xl shadow-md cursor-pointer"
-        >
+        <button onClick={() => setMobileNavOpen(!mobileNavOpen)} className="p-2.5 bg-blue-900 text-white rounded-xl shadow-md cursor-pointer">
           {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* GOVERNMENT SIDEBAR */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-950 text-white flex flex-col justify-between transition-transform duration-300 transform lg:translate-x-0 ${
-          mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
+      {/* SIDEBAR */}
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-slate-950 text-white flex flex-col justify-between transition-transform duration-300 transform lg:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-5 border-b border-slate-800">
           <div className="flex items-center gap-2 mb-1">
             <Landmark className="w-5 h-5 text-blue-400" />
             <span className="font-black text-lg tracking-tight text-white">KisanFlow</span>
-            <span className="text-[10px] bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">
-              Govt
-            </span>
+            <span className="text-[10px] bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">Govt</span>
           </div>
           <p className="text-xs text-slate-400 font-medium">State Command Portal</p>
         </div>
@@ -100,28 +129,22 @@ export const GovernmentDashboard: React.FC = () => {
         <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = govtView === item.id;
+            const hasPrediction = item.id === 'bottlenecks' && predictions.some(p => p.severity === 'HIGH' || p.severity === 'CRITICAL');
             return (
               <button
                 key={item.id}
                 onClick={() => {
-                  if (item.id === 'voice_assistant') {
-                    setIsVoiceAssistantOpen(true);
-                  } else {
-                    setGovtView(item.id);
-                  }
+                  if (item.id === 'voice_assistant') { setIsVoiceAssistantOpen(true); }
+                  else { setGovtView(item.id); }
                   setMobileNavOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-blue-700 text-white shadow-xs font-bold'
-                    : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${isActive ? 'bg-blue-700 text-white shadow-sm font-bold' : 'text-slate-300 hover:bg-slate-900 hover:text-white'}`}
               >
-                <div className="flex items-center gap-2.5">
-                  {item.icon}
-                  <span>{item.label}</span>
+                <div className="flex items-center gap-2.5">{item.icon}<span>{item.label}</span></div>
+                <div className="flex items-center gap-1">
+                  {hasPrediction && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />}
+                  {isActive && <ChevronRight className="w-3.5 h-3.5 text-blue-300" />}
                 </div>
-                {isActive && <ChevronRight className="w-3.5 h-3.5 text-blue-300" />}
               </button>
             );
           })}
@@ -137,75 +160,44 @@ export const GovernmentDashboard: React.FC = () => {
               <p className="text-[10px] text-blue-300 truncate">{authSession.user?.district || 'State HQ'}</p>
             </div>
           </div>
-
-          <button
-            onClick={logoutUser}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-red-950 hover:bg-red-900 text-red-200 text-xs font-bold border border-red-900 cursor-pointer transition-all"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Logout</span>
+          <button onClick={logoutUser} className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-red-950 hover:bg-red-900 text-red-200 text-xs font-bold border border-red-900 cursor-pointer transition-all">
+            <LogOut className="w-3.5 h-3.5" /><span>Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* MAIN OFFICER CONTENT */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 lg:ml-64 p-4 sm:p-8 min-h-screen space-y-6">
-        {/* ======================================================== */}
-        {/* 1. STATE & DISTRICT OVERVIEW */}
-        {/* ======================================================== */}
+
+        {/* ═══════════════════════════════════════════════════════
+            1. STATE OVERVIEW
+        ═══════════════════════════════════════════════════════ */}
         {govtView === 'overview' && (
           <div className="max-w-6xl mx-auto space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-black text-stone-900">
-                  State Procurement Operations Command
-                </h1>
-                <p className="text-xs text-stone-500">
-                  Live supervision of farmers, mandi centres & direct benefit transfers
-                </p>
+                <h1 className="text-2xl font-black text-stone-900">State Procurement Operations Command</h1>
+                <p className="text-xs text-stone-500">Live supervision of farmers, mandi centres & direct benefit transfers</p>
               </div>
-              <span className="text-xs bg-blue-100 text-blue-900 font-bold px-3 py-1.5 rounded-full border border-blue-200">
-                Official Government Oversight
-              </span>
+              <span className="text-xs bg-blue-100 text-blue-900 font-bold px-3 py-1.5 rounded-full border border-blue-200">Official Government Oversight</span>
             </div>
 
-            {/* Real Database KPI Metrics */}
+            {/* KPI Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-                <span className="text-stone-500 font-semibold block text-[10px] uppercase">Registered Farmers</span>
-                <span className="text-3xl font-black text-stone-900 mt-1 block">{totalRegistrations}</span>
-                <span className="text-[10px] text-stone-400">Total in Database</span>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-                <span className="text-stone-500 font-semibold block text-[10px] uppercase">Active in Yard</span>
-                <span className="text-3xl font-black text-blue-700 mt-1 block">{totalProcessing}</span>
-                <span className="text-[10px] text-blue-600">Across 3 centres</span>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-                <span className="text-stone-500 font-semibold block text-[10px] uppercase">Waiting at Gate</span>
-                <span className="text-3xl font-black text-amber-700 mt-1 block">{totalWaiting}</span>
-                <span className="text-[10px] text-amber-600">Pending verification</span>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-                <span className="text-stone-500 font-semibold block text-[10px] uppercase">Completed Today</span>
-                <span className="text-3xl font-black text-emerald-800 mt-1 block">{totalCompleted}</span>
-                <span className="text-[10px] text-emerald-600">J-Forms issued</span>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-                <span className="text-stone-500 font-semibold block text-[10px] uppercase">Procured Quantity</span>
-                <span className="text-3xl font-black text-stone-900 mt-1 block">{totalQuantityQuintals} Qtl</span>
-                <span className="text-[10px] text-stone-500">Weighbridge recorded</span>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
-                <span className="text-stone-500 font-semibold block text-[10px] uppercase">Disbursed MSP</span>
-                <span className="text-3xl font-black text-emerald-800 mt-1 block">₹{totalDisbursedMSP}</span>
-                <span className="text-[10px] text-emerald-600">Direct Benefit Transfer</span>
-              </div>
+              {[
+                { label: 'Registered Farmers', value: totalRegistrations, color: 'text-stone-900', sub: 'Total in Database' },
+                { label: 'Active in Yard', value: totalProcessing, color: 'text-blue-700', sub: 'Across all centres' },
+                { label: 'Waiting at Gate', value: totalWaiting, color: 'text-amber-700', sub: 'Pending verification' },
+                { label: 'Completed Today', value: totalCompleted, color: 'text-emerald-800', sub: 'J-Forms issued' },
+                { label: 'Procured Quantity', value: `${totalQuantityQuintals} Qtl`, color: 'text-stone-900', sub: 'Weighbridge recorded' },
+                { label: 'Disbursed MSP', value: `₹${totalDisbursedMSP.toLocaleString()}`, color: 'text-emerald-800', sub: 'Direct Benefit Transfer' },
+              ].map((kpi, i) => (
+                <div key={i} className="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm">
+                  <span className="text-stone-500 font-semibold block text-[10px] uppercase">{kpi.label}</span>
+                  <span className={`text-2xl font-black mt-1 block ${kpi.color}`}>{kpi.value}</span>
+                  <span className="text-[10px] text-stone-400">{kpi.sub}</span>
+                </div>
+              ))}
             </div>
 
             {/* Centre Monitoring Cards */}
@@ -217,29 +209,34 @@ export const GovernmentDashboard: React.FC = () => {
                   const waiting = registrations.filter(
                     r => r.centre_id === c.id && r.procurement_status !== 'PROCUREMENT_COMPLETED' && r.procurement_status !== 'QUALITY_REJECTED'
                   ).length;
+                  const loadPct = Math.min(100, Math.round((waiting / c.capacity_per_day) * 100));
                   return (
-                    <div key={c.id} className="bg-white rounded-3xl p-5 border border-stone-200 shadow-xs space-y-3">
+                    <div key={c.id} className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm space-y-3">
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="font-bold text-sm text-stone-900">{c.name}</h4>
                           <p className="text-xs text-stone-500">{c.district}, {c.state}</p>
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${loadPct >= 80 ? 'bg-red-100 text-red-800' : loadPct >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
                           {c.status}
                         </span>
                       </div>
-
                       <div className="grid grid-cols-2 gap-2 p-3 bg-stone-50 rounded-2xl text-xs">
-                        <div>
-                          <span className="text-stone-400 block text-[10px] uppercase">Total Bookings</span>
-                          <span className="font-bold text-stone-900 text-base">{centreCount}</span>
+                        <div><span className="text-stone-400 block text-[10px] uppercase">Total Bookings</span><span className="font-bold text-stone-900 text-base">{centreCount}</span></div>
+                        <div><span className="text-stone-400 block text-[10px] uppercase">Waiting in Queue</span><span className="font-bold text-amber-700 text-base">{waiting}</span></div>
+                      </div>
+                      {/* Load bar */}
+                      <div>
+                        <div className="flex justify-between text-[10px] text-stone-500 mb-1">
+                          <span>Centre Load</span><span className="font-bold">{loadPct}%</span>
                         </div>
-                        <div>
-                          <span className="text-stone-400 block text-[10px] uppercase">Waiting in Queue</span>
-                          <span className="font-bold text-amber-700 text-base">{waiting}</span>
+                        <div className="w-full bg-stone-200 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${loadPct >= 80 ? 'bg-red-500' : loadPct >= 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${loadPct}%` }}
+                          />
                         </div>
                       </div>
-
                       <div className="text-[11px] text-stone-500 flex justify-between">
                         <span>Active Counters: {c.counters_active}</span>
                         <span>Capacity: {c.capacity_per_day}/day</span>
@@ -252,33 +249,25 @@ export const GovernmentDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* ======================================================== */}
-        {/* 2. ALL REGISTRATIONS (AUDIT & COMPLIANCE) */}
-        {/* ======================================================== */}
-        {(govtView === 'all_registrations' || govtView === 'farmers' || govtView === 'live_queue') && (
+        {/* ═══════════════════════════════════════════════════════
+            2. ALL REGISTRATIONS TABLE
+        ═══════════════════════════════════════════════════════ */}
+        {(govtView === 'all_registrations' || govtView === 'farmers' || govtView === 'live_queue' || govtView === 'operators' || govtView === 'procurement_monitoring') && (
           <div className="max-w-6xl mx-auto space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex justify-between items-center">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-black text-stone-900">All State Procurement Registrations</h2>
                 <p className="text-xs text-stone-500">Live multi-centre database records from Supabase</p>
               </div>
-              <span className="text-xs bg-blue-100 text-blue-900 font-bold px-3 py-1 rounded-full">
-                {registrations.length} Total Registrations
-              </span>
+              <span className="text-xs bg-blue-100 text-blue-900 font-bold px-3 py-1 rounded-full">{registrations.length} Total</span>
             </div>
-
             {registrations.length > 0 ? (
-              <div className="bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-xs">
+              <div className="bg-white rounded-3xl border border-stone-200 overflow-auto shadow-sm">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-stone-50 text-stone-500 uppercase border-b border-stone-200">
                     <tr>
-                      <th className="p-4">Token</th>
-                      <th className="p-4">Farmer</th>
-                      <th className="p-4">Centre</th>
-                      <th className="p-4">Crop</th>
-                      <th className="p-4">Quantity</th>
-                      <th className="p-4">Current Stage</th>
-                      <th className="p-4">Status</th>
+                      <th className="p-4">Token</th><th className="p-4">Farmer</th><th className="p-4">Centre</th>
+                      <th className="p-4">Crop</th><th className="p-4">Quantity</th><th className="p-4">Stage</th><th className="p-4">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100">
@@ -289,12 +278,8 @@ export const GovernmentDashboard: React.FC = () => {
                         <td className="p-4 text-stone-600">{r.centre_name}</td>
                         <td className="p-4">{r.crop}</td>
                         <td className="p-4 font-bold">{r.quantity_quintals} Qtl</td>
-                        <td className="p-4 font-bold text-amber-800">{r.current_stage.replace('_', ' ')}</td>
-                        <td className="p-4">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-800">
-                            {r.procurement_status.replace(/_/g, ' ')}
-                          </span>
-                        </td>
+                        <td className="p-4 font-bold text-amber-800">{r.current_stage.replace(/_/g, ' ')}</td>
+                        <td className="p-4"><span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-800">{r.procurement_status.replace(/_/g, ' ')}</span></td>
                       </tr>
                     ))}
                   </tbody>
@@ -303,75 +288,169 @@ export const GovernmentDashboard: React.FC = () => {
             ) : (
               <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center">
                 <p className="font-bold text-stone-900">No registrations found.</p>
-                <p className="text-xs text-stone-500 mt-1">Initial database is clean. No registrations have been created yet.</p>
               </div>
             )}
           </div>
         )}
 
-        {/* ======================================================== */}
-        {/* 3. BOTTLENECKS & ALERTS */}
-        {/* ======================================================== */}
+        {/* ═══════════════════════════════════════════════════════
+            3. AI BOTTLENECK PREDICTIONS
+        ═══════════════════════════════════════════════════════ */}
         {govtView === 'bottlenecks' && (
           <div className="max-w-5xl mx-auto space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs">
-              <h2 className="text-xl font-black text-stone-900">Mandi Bottlenecks & Real-World Delay Alerts</h2>
-              <p className="text-xs text-stone-500">
-                Ground-reality tracking: Assayer shortages, weighbridge congestion & bardana delays
-              </p>
+            {/* Header */}
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-stone-900">AI Bottleneck Predictions & Alerts</h2>
+                <p className="text-xs text-stone-500">Real-time AI analysis of procurement stage congestion across all centres</p>
+              </div>
+              <button
+                onClick={() => { setPredictionsLoaded(false); loadPredictions(); }}
+                disabled={isLoadingPredictions}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-800 hover:bg-blue-900 text-white text-xs font-bold rounded-2xl cursor-pointer transition-all disabled:opacity-60"
+              >
+                {isLoadingPredictions ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {isLoadingPredictions ? 'Analysing...' : 'Refresh AI Predictions'}
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white rounded-3xl p-5 border border-amber-300 shadow-2xs space-y-2">
-                <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
-                  <AlertTriangle className="w-5 h-5" />
-                  <span>Stage 4: Bagging & Gunny Bags (Bardana)</span>
+            {/* AI Prediction Engine Banner */}
+            <div className="bg-gradient-to-r from-slate-900 to-blue-950 rounded-3xl p-5 border border-blue-900/50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center">
+                  <Bot className="w-6 h-6 text-blue-400" />
                 </div>
-                <p className="text-xs text-stone-600">
-                  Ground Reality: 1–2 days delay due to state bardana distribution bottleneck and labour shortage.
-                </p>
-                <span className="text-[10px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-bold">
-                  Recommended Action: Dispatch buffer jute bales
-                </span>
+                <div>
+                  <h3 className="font-black text-sm text-white">AI Bottleneck Intelligence Engine</h3>
+                  <p className="text-[11px] text-blue-300">Analyses queue depth, stage counts & historical delays · Powered by Gemini 2.5 Flash</p>
+                </div>
+                {predictionTimestamp && (
+                  <span className="ml-auto text-[10px] text-slate-400">Last updated: {predictionTimestamp}</span>
+                )}
               </div>
 
-              <div className="bg-white rounded-3xl p-5 border border-blue-300 shadow-2xs space-y-2">
-                <div className="flex items-center gap-2 text-blue-800 font-bold text-sm">
-                  <Clock className="w-5 h-5" />
-                  <span>Stage 3: Weighing & Unloading</span>
+              {isLoadingPredictions && (
+                <div className="flex items-center gap-3 py-4">
+                  <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                  <div>
+                    <p className="text-sm text-blue-200 font-bold">AI is analysing all procurement stages...</p>
+                    <p className="text-[11px] text-blue-400">Processing queue data for {registrations.length} registrations across {centres.length} centres</p>
+                  </div>
                 </div>
-                <p className="text-xs text-stone-600">
-                  Ground Reality: 4–6 hours delay when single digital weighbridge experiences queue spikes.
-                </p>
-                <span className="text-[10px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-bold">
-                  Recommended Action: Activate auxiliary weigh platform
-                </span>
-              </div>
+              )}
+
+              {!isLoadingPredictions && !predictionsLoaded && (
+                <p className="text-xs text-slate-400 italic py-2">Click "Refresh AI Predictions" to analyse current bottlenecks.</p>
+              )}
             </div>
+
+            {/* Prediction Cards */}
+            {predictions.length > 0 && !isLoadingPredictions && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {predictions.map((pred, i) => {
+                  const styles = SEVERITY_STYLES[pred.severity];
+                  return (
+                    <div key={i} className={`bg-white rounded-3xl p-5 border ${styles.border} shadow-sm space-y-3`}>
+                      {/* Stage Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{styles.icon}</span>
+                          <div>
+                            <p className="font-black text-sm text-stone-900">{pred.stage.replace(/_/g, ' ')}</p>
+                            <p className="text-[10px] text-stone-400">Est. delay: {pred.estimatedDelayMins} min</p>
+                          </div>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${styles.badge}`}>
+                          {pred.severity}
+                        </span>
+                      </div>
+
+                      {/* Prediction */}
+                      <div className={`rounded-2xl p-3.5 ${styles.bg}`}>
+                        <div className="flex items-start gap-2">
+                          <TrendingUp className="w-3.5 h-3.5 shrink-0 mt-0.5 text-stone-600" />
+                          <p className="text-xs text-stone-700 leading-relaxed">{pred.prediction}</p>
+                        </div>
+                      </div>
+
+                      {/* Recommendation */}
+                      <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200">
+                        <div className="flex items-start gap-2">
+                          <Zap className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-600" />
+                          <div>
+                            <p className="text-[10px] font-bold text-blue-800 uppercase mb-0.5">Recommended Action</p>
+                            <p className="text-xs text-stone-700 leading-relaxed">{pred.recommendation}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Delay bar */}
+                      <div>
+                        <div className="flex justify-between text-[10px] text-stone-500 mb-1">
+                          <span>Estimated delay</span><span className="font-bold">{pred.estimatedDelayMins} min</span>
+                        </div>
+                        <div className="w-full bg-stone-200 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={`h-1.5 rounded-full ${pred.severity === 'CRITICAL' ? 'bg-red-500' : pred.severity === 'HIGH' ? 'bg-orange-500' : pred.severity === 'MEDIUM' ? 'bg-amber-400' : 'bg-emerald-500'}`}
+                            style={{ width: `${Math.min(100, (pred.estimatedDelayMins / 120) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <p className={`text-[9px] font-bold ${pred.source === 'gemini' ? 'text-blue-600' : 'text-amber-600'}`}>
+                        {pred.source === 'gemini' ? '⚡ Gemini AI Analysis' : '🔷 Rule-Based Analysis'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Summary statistics */}
+            {predictions.length > 0 && !isLoadingPredictions && (
+              <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm">
+                <h3 className="font-bold text-sm text-stone-900 mb-3">Live Stage Distribution</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  {[
+                    { stage: 'GATE_ENTRY', label: 'Gate Entry', color: 'bg-stone-500' },
+                    { stage: 'QUALITY_CHECK', label: 'Quality Check', color: 'bg-blue-500' },
+                    { stage: 'WEIGHING', label: 'Weighing', color: 'bg-amber-500' },
+                    { stage: 'BAGGING', label: 'Bagging', color: 'bg-orange-500' },
+                  ].map(s => {
+                    const count = registrations.filter(r => r.current_stage === s.stage).length;
+                    return (
+                      <div key={s.stage} className="bg-stone-50 rounded-2xl p-3 border border-stone-200">
+                        <div className={`w-2 h-2 rounded-full ${s.color} mb-1.5`} />
+                        <span className="text-stone-500 block text-[10px] uppercase">{s.label}</span>
+                        <span className="text-2xl font-black text-stone-900">{count}</span>
+                        <span className="text-[10px] text-stone-400 block">farmers</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* ======================================================== */}
-        {/* 4. PAYMENTS MONITORING */}
-        {/* ======================================================== */}
+        {/* ═══════════════════════════════════════════════════════
+            4. PAYMENTS MONITORING
+        ═══════════════════════════════════════════════════════ */}
         {govtView === 'payments' && (
           <div className="max-w-5xl mx-auto space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm">
               <h2 className="text-xl font-black text-stone-900">Direct Benefit Transfer (DBT) Oversight</h2>
               <p className="text-xs text-stone-500">State-wide PFMS disbursement logs</p>
             </div>
-
             {payments.length > 0 ? (
               <div className="space-y-3">
                 {payments.map(p => (
-                  <div key={p.id} className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs flex justify-between items-center text-xs">
+                  <div key={p.id} className="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex justify-between items-center text-xs">
                     <div>
                       <span className="font-mono font-bold text-stone-900 text-sm">{p.transaction_id}</span>
-                      <p className="text-stone-500">Amount: ₹{p.amount} • {p.quantity} Quintals</p>
+                      <p className="text-stone-500">Amount: ₹{p.amount.toLocaleString()} · {p.quantity} Quintals</p>
                     </div>
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold rounded-full">
-                      {p.status}
-                    </span>
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold rounded-full">{p.status}</span>
                   </div>
                 ))}
               </div>
@@ -383,27 +462,45 @@ export const GovernmentDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* Reports & Analytics */}
+        {govtView === 'reports_analytics' && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm">
+              <h2 className="text-xl font-black text-stone-900">Reports & Analytics</h2>
+              <p className="text-xs text-stone-500">Procurement performance metrics</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Completion Rate', value: totalRegistrations > 0 ? `${Math.round((totalCompleted / totalRegistrations) * 100)}%` : '0%', sub: `${totalCompleted} of ${totalRegistrations} processed`, color: 'text-emerald-800' },
+                { label: 'Total MSP Value', value: `₹${totalDisbursedMSP.toLocaleString()}`, sub: `${totalQuantityQuintals} quintals procured`, color: 'text-blue-800' },
+                { label: 'Active Farmers', value: totalWaiting + totalProcessing, sub: 'In queue or processing', color: 'text-amber-800' },
+              ].map((stat, i) => (
+                <div key={i} className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm text-center space-y-1">
+                  <p className="text-xs text-stone-500 uppercase font-bold">{stat.label}</p>
+                  <p className={`text-3xl font-black ${stat.color}`}>{stat.value}</p>
+                  <p className="text-[11px] text-stone-400">{stat.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Profile */}
         {govtView === 'profile' && (
-          <div className="max-w-xl mx-auto bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-xs space-y-4">
+          <div className="max-w-xl mx-auto bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-sm space-y-4">
             <h2 className="text-lg font-black text-stone-900">Government Officer Profile</h2>
             <div className="space-y-3 text-xs">
-              <div className="flex justify-between py-2 border-b border-stone-100">
-                <span className="text-stone-500">Officer Name:</span>
-                <span className="font-bold text-stone-900">{authSession.user?.name}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-stone-100">
-                <span className="text-stone-500">Designation / Department:</span>
-                <span className="font-bold text-stone-900">{authSession.user?.designation}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-stone-100">
-                <span className="text-stone-500">Assigned District:</span>
-                <span className="font-bold text-stone-900">{authSession.user?.district}</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-stone-500">Access Level:</span>
-                <span className="font-bold text-blue-700 uppercase">State Oversight Officer</span>
-              </div>
+              {[
+                { label: 'Officer Name', value: authSession.user?.name },
+                { label: 'Designation / Department', value: authSession.user?.designation },
+                { label: 'Assigned District', value: authSession.user?.district },
+                { label: 'Access Level', value: 'State Oversight Officer', color: 'text-blue-700' },
+              ].map((row, i) => (
+                <div key={i} className="flex justify-between py-2 border-b border-stone-100 last:border-0">
+                  <span className="text-stone-500">{row.label}:</span>
+                  <span className={`font-bold text-stone-900 uppercase ${row.color || ''}`}>{row.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}

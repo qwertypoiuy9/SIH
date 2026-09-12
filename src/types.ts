@@ -8,21 +8,32 @@ export interface Language {
 
 export type UserRole = 'farmer' | 'operator' | 'government' | 'support';
 
+// Extended UserProfile with full address fields
 export interface UserProfile {
   id: string;
   role: UserRole;
   name: string;
   phone: string;
+  email?: string;
   maskedPhone?: string;
+  // Full address
+  address?: string;
   village?: string;
+  mandal?: string;
   district?: string;
   state?: string;
+  pincode?: string;
+  // Geocoded coordinates from address
+  latitude?: number;
+  longitude?: number;
+  // Farmer-specific
   aadhaar_masked?: string;
+  land_holding_acres?: number;
+  preferred_language?: LanguageCode;
+  // Operator/Govt specific
   employee_id?: string;
   centre_id?: string;
   designation?: string;
-  land_holding_acres?: number;
-  preferred_language?: LanguageCode;
 }
 
 export interface AuthSession {
@@ -34,8 +45,11 @@ export interface AuthSession {
 export interface Centre {
   id: string;
   name: string;
+  address?: string;
   district: string;
   state: string;
+  latitude?: number;
+  longitude?: number;
   capacity_per_day: number;
   current_queue: number;
   status: 'OPTIMAL' | 'MODERATE' | 'OVERLOADED';
@@ -43,17 +57,78 @@ export interface Centre {
   avg_processing_mins: number;
   open_hours: string;
   counters_active: number;
+  accepted_crops?: string[];
+  contact?: string;
+  is_open?: boolean;
 }
 
 export interface Crop {
   id: string;
   name: string;
+  local_name?: string;       // regional language name
+  scientific_name?: string;
   category: string;
   msp_per_quintal: number;
   icon: string;
+  // Location relevance
+  primary_states?: string[];
+  primary_districts?: string[];
+  season?: string;
 }
 
-export type ProcurementStage = 
+export interface CropRegion {
+  crop_id: string;
+  state: string;
+  district: string;
+  season?: string;
+  relevance: 'primary' | 'secondary';
+}
+
+// Weather types
+export interface WeatherCurrent {
+  temp_c: number;
+  feels_like_c: number;
+  humidity: number;
+  wind_kph: number;
+  condition: string;
+  condition_icon: string;
+  rain_mm?: number;
+  rain_probability?: number;
+  uv_index?: number;
+  visibility_km?: number;
+  location: string;
+  dt: number;
+}
+
+export interface WeatherForecastDay {
+  date: string;
+  max_temp_c: number;
+  min_temp_c: number;
+  condition: string;
+  condition_icon: string;
+  rain_probability: number;
+  rain_mm: number;
+  wind_kph: number;
+  humidity: number;
+}
+
+export interface WeatherAlert {
+  event: string;
+  description: string;
+  severity: 'minor' | 'moderate' | 'severe' | 'extreme';
+  start: number;
+  end: number;
+}
+
+export interface WeatherData {
+  current: WeatherCurrent;
+  forecast: WeatherForecastDay[];
+  alerts: WeatherAlert[];
+  farmer_advisory: string;
+  source: 'openweather' | 'fallback';
+}
+
+export type ProcurementStage =
   | 'GATE_ENTRY'
   | 'QUALITY_CHECK'
   | 'WEIGHING'
@@ -62,7 +137,7 @@ export type ProcurementStage =
   | 'COMPLETED'
   | 'REJECTED';
 
-export type ProcurementStatus = 
+export type ProcurementStatus =
   | 'WAITING_FOR_GATE_ENTRY'
   | 'GATE_ENTRY_VERIFIED'
   | 'QUALITY_CHECK_PENDING'
@@ -191,7 +266,7 @@ export interface AuditLog {
   timestamp: string;
 }
 
-export type FarmerSidebarView = 
+export type FarmerSidebarView =
   | 'dashboard'
   | 'book_slot'
   | 'my_token'
@@ -199,6 +274,8 @@ export type FarmerSidebarView =
   | 'procurement_status'
   | 'payments'
   | 'my_registrations'
+  | 'procurement_centers'
+  | 'weather'
   | 'notifications'
   | 'phone_call'
   | 'voice_assistant'
@@ -235,7 +312,16 @@ export type GovernmentSidebarView =
   | 'voice_assistant'
   | 'profile';
 
-export type ActivePortalView = 'landing' | 'login' | 'farmer' | 'operator' | 'government';
+export type SupportSidebarView =
+  | 'dashboard'
+  | 'farmer_lookup'
+  | 'grievances'
+  | 'ai_analysis'
+  | 'notifications'
+  | 'voice_assistant'
+  | 'profile';
+
+export type ActivePortalView = 'landing' | 'login' | 'register' | 'farmer' | 'operator' | 'government' | 'support';
 
 export interface SupabaseConfig {
   url: string;

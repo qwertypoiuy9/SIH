@@ -1,4 +1,3 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import {
   Registration,
   QualityCheckRecord,
@@ -14,10 +13,11 @@ import {
   Centre,
 } from '../types';
 import { INITIAL_CENTRES } from '../data/mockData';
+import { supabase } from '../utils/supabaseAuth';
 
-export const DEFAULT_SUPABASE_URL = 'https://pqconvvuhpvoqutgtmac.supabase.co';
-export const DEFAULT_SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxY29udnZ1aHB2b3F1dGd0bWFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNTIzNTYsImV4cCI6MjEwNDYyODM1Nn0.da1NkE72812nRPTbjzgyRc7v5nc1fmfFoAPTFKWU-Cs';
+// Keep these for config backward-compat (used by supabaseClient.ts legacy)
+export const DEFAULT_SUPABASE_URL = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_SUPABASE_URL || '';
+export const DEFAULT_SUPABASE_ANON_KEY = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_SUPABASE_ANON_KEY || '';
 
 const SUPABASE_STORAGE_KEY = 'kisanflow_supabase_config';
 const LOCAL_DB_STORAGE_PREFIX = 'kisanflow_db_';
@@ -39,46 +39,16 @@ export function getStoredSupabaseConfig(): SupabaseConfig {
         connected: parsed.connected !== undefined ? parsed.connected : true,
       };
     }
-  } catch {
-    // Ignore
-  }
-  return {
-    url: DEFAULT_SUPABASE_URL,
-    anonKey: DEFAULT_SUPABASE_ANON_KEY,
-    connected: true,
-  };
+  } catch { /* Ignore */ }
+  return { url: DEFAULT_SUPABASE_URL, anonKey: DEFAULT_SUPABASE_ANON_KEY, connected: true };
 }
 
 export function saveSupabaseConfig(config: SupabaseConfig) {
-  try {
-    localStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify(config));
-  } catch {
-    // Ignore
-  }
+  try { localStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify(config)); } catch { /* Ignore */ }
 }
 
-let cachedClient: SupabaseClient | null = null;
-let lastUrl = '';
-let lastKey = '';
-
-export function getSupabaseClient(config?: SupabaseConfig): SupabaseClient | null {
-  const active = config || getStoredSupabaseConfig();
-  if (!active.url || !active.anonKey) return null;
-
-  if (cachedClient && lastUrl === active.url && lastKey === active.anonKey) {
-    return cachedClient;
-  }
-
-  try {
-    cachedClient = createClient(active.url, active.anonKey);
-    lastUrl = active.url;
-    lastKey = active.anonKey;
-    return cachedClient;
-  } catch (err) {
-    console.error('Failed to create Supabase client:', err);
-    return null;
-  }
-}
+// Use shared Supabase client; getSupabaseClient() kept for backward compat
+export function getSupabaseClient() { return supabase; }
 
 // ==============================================================================
 // HYBRID DATABASE STORE (SUPABASE WITH SEAMLESS LOCAL REST-MIRROR FALLBACK)
