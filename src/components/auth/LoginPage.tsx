@@ -349,8 +349,18 @@ export const LoginPage: React.FC = () => {
                       <label className="block text-[10px] font-bold text-stone-600 uppercase mb-1">Assigned Procurement Centre</label>
                       <select value={staffCentre || centres[0]?.id || ''} onChange={e => setStaffCentre(e.target.value)}
                         className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white">
-                        {centres.map(c => (
-                          <option key={c.id} value={c.id}>{c.name} — {c.district}</option>
+                        {Object.entries(
+                          centres.reduce((acc, c) => {
+                            if (!acc[c.district]) acc[c.district] = [];
+                            acc[c.district].push(c);
+                            return acc;
+                          }, {} as Record<string, typeof centres>)
+                        ).map(([district, distCentres]) => (
+                          <optgroup key={district} label={district}>
+                            {distCentres.map(c => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                          </optgroup>
                         ))}
                       </select>
                     </div>

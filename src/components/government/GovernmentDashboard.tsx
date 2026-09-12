@@ -88,6 +88,15 @@ export const GovernmentDashboard: React.FC = () => {
   }, [fetchOperators]);
 
   const handleApproveOperator = async (userId: string) => {
+    const targetOp = operatorsList.find(op => op.id === userId);
+    if (targetOp) {
+      const alreadyApproved = operatorsList.find(op => op.centre_id === targetOp.centre_id && op.designation === 'APPROVED');
+      if (alreadyApproved) {
+        alert('This procurement centre already has an approved operator. Only one operator is allowed per centre.');
+        return;
+      }
+    }
+
     const success = await approveOperator(userId);
     if (success) {
       setOperatorsList(prev => prev.map(op => op.id === userId ? { ...op, designation: 'APPROVED' } : op));
