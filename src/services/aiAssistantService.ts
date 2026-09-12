@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+﻿import { GoogleGenAI } from '@google/genai';
 import {
   Centre,
   Crop,
@@ -87,7 +87,7 @@ function getGeminiKey(): string {
   return (
     (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_GEMINI_API_KEY ||
     (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '') ||
-    localStorage.getItem('kisanflow_gemini_api_key') ||
+    localStorage.getItem('KisanQ_gemini_api_key') ||
     ''
   );
 }
@@ -182,7 +182,7 @@ function buildGeminiPrompt(query: string, ctx: AssistantContext): string {
     ? `Status: ${ctx.payment.status} | Amount: ₹${ctx.payment.amount?.toLocaleString('en-IN')} | Crop: ${ctx.payment.quantity} Qtl @ ₹${ctx.payment.msp_price}/Qtl`
     : 'No payment recorded yet';
 
-  return `You are KisanFlow AI, a knowledgeable and empathetic agricultural assistant for Indian farmers under the MSP government procurement scheme.
+  return `You are KisanQ AI, a knowledgeable and empathetic agricultural assistant for Indian farmers under the MSP government procurement scheme.
 
 CRITICAL INSTRUCTION: Respond ENTIRELY in ${langMeta.name} (${langMeta.nativeName}). Never answer in English unless the farmer explicitly asks in English.
 Be concise: keep responses under 5 sentences. Use simple farmer-friendly language. Include specific data from the records below.
@@ -680,7 +680,7 @@ Write ONE short, warm SMS message in ${langMeta.nativeName} (max 2 sentences). B
     SLOT_CONFIRMED: {
       te: `${params.farmerName} గారు, మీ స్లాట్ నిర్ధారించబడింది! టోకెన్ #${params.tokenNumber} — ${params.crop} (${params.quantity} క్వింటాళ్లు) ${params.centreName} వద్ద. కిసాన్ ఫ్లో — 1800-425-4747`,
       hi: `${params.farmerName} जी, आपका स्लॉट पुष्टि हो गया! टोकन #${params.tokenNumber} — ${params.crop} (${params.quantity} क्विंटल) ${params.centreName} पर। किसानफ्लो — 1800-425-4747`,
-      en: `Dear ${params.farmerName}, your slot is confirmed! Token #${params.tokenNumber} for ${params.crop} (${params.quantity} Qtl) at ${params.centreName}. KisanFlow — 1800-425-4747`,
+      en: `Dear ${params.farmerName}, your slot is confirmed! Token #${params.tokenNumber} for ${params.crop} (${params.quantity} Qtl) at ${params.centreName}. KisanQ — 1800-425-4747`,
       kn: `${params.farmerName} ಅವರೇ, ನಿಮ್ಮ ಸ್ಲಾಟ್ ದೃಢಪಟ್ಟಿದೆ! ಟೋಕನ್ #${params.tokenNumber} — ${params.crop} ${params.centreName}. 1800-425-4747`,
       ta: `${params.farmerName} அவர்களே, உங்கள் ஸ்லாட் உறுதிப்படுத்தப்பட்டது! டோக்கன் #${params.tokenNumber} — ${params.crop} ${params.centreName}. 1800-425-4747`,
       bn: `${params.farmerName}, আপনার স্লট নিশ্চিত! টোকেন #${params.tokenNumber} — ${params.crop} (${params.quantity} কুইন্টাল) ${params.centreName}. 1800-425-4747`,
@@ -697,7 +697,7 @@ Write ONE short, warm SMS message in ${langMeta.nativeName} (max 2 sentences). B
 
   const msgMap = templates[params.eventType];
   if (msgMap) return msgMap[params.language] || msgMap.en;
-  return `KisanFlow: ${params.eventType} for Token #${params.tokenNumber} — ${params.farmerName}. Call 1800-425-4747 for details.`;
+  return `KisanQ: ${params.eventType} for Token #${params.tokenNumber} — ${params.farmerName}. Call 1800-425-4747 for details.`;
 }
 
 // ============================================================
@@ -1059,7 +1059,7 @@ function generateIndicNLPResponse(query: string, ctx: AssistantContext): Assista
   const fallbackReplies: Record<LanguageCode, string> = {
     te: `${greeting}! కిసాన్ ఫ్లో సహాయ కేంద్రం. మీ టోకెన్, క్యూ, స్లాట్ బుకింగ్, MSP రేట్లు, J-ఫారం లేదా చెల్లింపుల గురించి అడగండి.`,
     hi: `${greeting}! किसानफ्लो में आपका स्वागत है। टोकन, MSP दरें, जे-फॉर्म या भुगतान के बारे में पूछें।`,
-    en: `Hello! Welcome to KisanFlow AI. Ask about your token, live queue, MSP rates, J-Form, PM-KISAN eligibility, or DBT payment status.`,
+    en: `Hello! Welcome to KisanQ AI. Ask about your token, live queue, MSP rates, J-Form, PM-KISAN eligibility, or DBT payment status.`,
     kn: `${greeting}! ಕಿಸಾನ್‌ಫ್ಲೋ ಸಹಾಯವಾಣಿಗೆ ಸ್ವಾಗತ. ಟೋಕನ್, MSP ದರಗಳು ಅಥವಾ ಪಾವತಿ ಬಗ್ಗೆ ಕೇಳಿ.`,
     ta: `${greeting}! கிசான்ஃப்ளோவிற்கு வரவேற்கிறோம். டோக்கன், MSP விலைகள் அல்லது பணம் பற்றி கேளுங்கள்.`,
     bn: `${greeting}! কিষাণফ্লোতে স্বাগতম। টোকেন, MSP দর বা পেমেন্ট সম্পর্কে জিজ্ঞাসা করুন।`,

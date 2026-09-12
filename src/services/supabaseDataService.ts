@@ -1,4 +1,4 @@
-import {
+﻿import {
   Registration,
   QualityCheckRecord,
   WeighingRecord,
@@ -12,15 +12,11 @@ import {
   UserProfile,
   Centre,
 } from '../types';
-import { INITIAL_CENTRES } from '../data/mockData';
 import { supabase } from '../utils/supabaseAuth';
 
-// Keep these for config backward-compat (used by supabaseClient.ts legacy)
 export const DEFAULT_SUPABASE_URL = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_SUPABASE_URL || '';
 export const DEFAULT_SUPABASE_ANON_KEY = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_SUPABASE_ANON_KEY || '';
-
-const SUPABASE_STORAGE_KEY = 'kisanflow_supabase_config';
-const LOCAL_DB_STORAGE_PREFIX = 'kisanflow_db_';
+const SUPABASE_STORAGE_KEY = 'KisanQ_supabase_config';
 
 export interface SupabaseConfig {
   url: string;
@@ -47,72 +43,53 @@ export function saveSupabaseConfig(config: SupabaseConfig) {
   try { localStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify(config)); } catch { /* Ignore */ }
 }
 
-// Use shared Supabase client; getSupabaseClient() kept for backward compat
 export function getSupabaseClient() { return supabase; }
 
-// ==============================================================================
-// HYBRID DATABASE STORE (SUPABASE WITH SEAMLESS LOCAL REST-MIRROR FALLBACK)
-// ==============================================================================
-function getLocalTable<T>(table: string): T[] {
-  try {
-    const raw = localStorage.getItem(LOCAL_DB_STORAGE_PREFIX + table);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function setLocalTable<T>(table: string, data: T[]) {
-  try {
-    localStorage.setItem(LOCAL_DB_STORAGE_PREFIX + table, JSON.stringify(data));
-  } catch {
-    // Ignore
+// Helper to log activity events
+async function logActivityEvent(event_type: string, entity_type: string, entity_id: string, details: any = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    await supabase.from('activity_events').insert({
+      user_id: session.user.id,
+      event_type,
+      entity_type,
+      entity_id,
+      details,
+    });
   }
 }
 
 export const SupabaseDataService = {
-  // 1. GET NEXT TOKEN NUMBER SAFELY STARTING FROM 1
   async getNextTokenNumber(centreId: string, preferredDate: string): Promise<number> {
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        const { data, error } = await client
-          .from('registrations')
-          .select('token_number')
-          .eq('centre_id', centreId)
-          .eq('preferred_date', preferredDate)
-          .order('token_number', { ascending: false })
-          .limit(1);
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('token_number')
+      .eq('centre_id', centreId)
+      .eq('preferred_date', preferredDate)
+      .order('token_number', { ascending: false })
+      .limit(1);
 
-        if (!error && data && data.length > 0) {
-          return Number(data[0].token_number) + 1;
-        }
-      } catch {
-        // Fallback to local
-      }
+    if (!error && data && data.length > 0) {
+      return Number(data[0].token_number) + 1;
     }
-
-    // Local DB lookup
-    const localRegs = getLocalTable<Registration>('registrations');
-    const matching = localRegs.filter(
-      r => r.centre_id === centreId && r.preferred_date === preferredDate
-    );
-    if (matching.length === 0) return 1;
-    const maxToken = Math.max(...matching.map(r => r.token_number || 0));
-    return maxToken + 1;
+    return 1;
   },
 
-  // 2. CREATE REGISTRATION & TOKEN
   async createRegistration(
     params: Omit<Registration, 'id' | 'token_number' | 'queue_position' | 'current_stage' | 'procurement_status' | 'created_at'>
   ): Promise<Registration> {
     const token = await this.getNextTokenNumber(params.centre_id, params.preferred_date);
 
-    // Calculate queue position among waiting registrations for this centre and date
-    const allForCentre = await this.getRegistrationsForCentre(params.centre_id);
-    const waitingAhead = allForCentre.filter(
-      r => r.preferred_date === params.preferred_date && r.procurement_status !== 'PROCUREMENT_COMPLETED' && r.procurement_status !== 'QUALITY_REJECTED'
-    ).length;
+    // Calculate queue position
+    const { count } = await supabase
+      .from('registrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('centre_id', params.centre_id)
+      .eq('preferred_date', params.preferred_date)
+      .neq('procurement_status', 'PROCUREMENT_COMPLETED')
+      .neq('procurement_status', 'QUALITY_REJECTED');
+      
+    const waitingAhead = count || 0;
 
     const newReg: Registration = {
       ...params,
@@ -126,25 +103,11 @@ export const SupabaseDataService = {
       created_at: new Date().toISOString(),
     };
 
-    // Try Supabase insert
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        const { error } = await client.from('registrations').insert(newReg);
-        if (error) {
-          console.warn('Supabase remote insert fallback to local persistence:', error.message);
-        }
-      } catch (err) {
-        console.warn('Supabase insert network error, saving locally:', err);
-      }
-    }
+    const { error } = await supabase.from('registrations').insert(newReg);
+    if (error) throw error;
 
-    // Always mirror to local DB
-    const local = getLocalTable<Registration>('registrations');
-    local.push(newReg);
-    setLocalTable('registrations', local);
+    await logActivityEvent('registration_created', 'registration', newReg.id, { token_number: token });
 
-    // Create Initial Notification
     await this.createNotification({
       user_id: newReg.farmer_id,
       title: 'Slot Confirmed & Token Assigned',
@@ -152,7 +115,6 @@ export const SupabaseDataService = {
       channel: 'SMS',
     });
 
-    // Create audit log
     await this.createAuditLog({
       registration_id: newReg.id,
       stage: 'GATE_ENTRY',
@@ -165,38 +127,32 @@ export const SupabaseDataService = {
     return newReg;
   },
 
-  // 3. GET ALL REGISTRATIONS (GOVERNMENT / AUDIT)
   async getAllRegistrations(): Promise<Registration[]> {
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        const { data, error } = await client
-          .from('registrations')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (!error && data) return data;
-      } catch {
-        // Fallback
-      }
-    }
-    return getLocalTable<Registration>('registrations').sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('*')
+      .order('created_at', { ascending: false });
+    return data || [];
   },
 
-  // 4. GET REGISTRATIONS FOR SPECIFIC FARMER
   async getRegistrationsForFarmer(farmerId: string): Promise<Registration[]> {
-    const all = await this.getAllRegistrations();
-    return all.filter(r => r.farmer_id === farmerId || r.phone === farmerId);
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('*')
+      .eq('farmer_id', farmerId)
+      .order('created_at', { ascending: false });
+    return data || [];
   },
 
-  // 5. GET REGISTRATIONS FOR SPECIFIC CENTRE
   async getRegistrationsForCentre(centreId: string): Promise<Registration[]> {
-    const all = await this.getAllRegistrations();
-    return all.filter(r => r.centre_id === centreId);
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('*')
+      .eq('centre_id', centreId)
+      .order('created_at', { ascending: false });
+    return data || [];
   },
 
-  // 6. UPDATE PROCUREMENT STAGE & STATUS (MANDI OPERATOR)
   async updateProcurementStage(
     registrationId: string,
     newStage: ProcurementStage,
@@ -212,49 +168,30 @@ export const SupabaseDataService = {
       payment?: Partial<PaymentRecord>;
     }
   ): Promise<boolean> {
-    const all = await this.getAllRegistrations();
-    const index = all.findIndex(r => r.id === registrationId);
-    if (index === -1) return false;
+    
+    // Get existing reg
+    const { data: existingRegs } = await supabase.from('registrations').select('*').eq('id', registrationId);
+    if (!existingRegs || existingRegs.length === 0) return false;
+    const prev = existingRegs[0];
 
-    const prev = all[index];
-    const updated: Registration = {
-      ...prev,
+    const updates: any = {
       current_stage: newStage,
       procurement_status: newStatus,
       delay_minutes: extraData?.delayMinutes !== undefined ? extraData.delayMinutes : prev.delay_minutes,
       bottleneck_remarks: extraData?.bottleneckRemarks || prev.bottleneck_remarks,
     };
 
-    // If completed or rejected, queue position is 0
     if (newStatus === 'PROCUREMENT_COMPLETED' || newStatus === 'QUALITY_REJECTED') {
-      updated.queue_position = 0;
+      updates.queue_position = 0;
     }
 
-    all[index] = updated;
-    setLocalTable('registrations', all);
+    const { error } = await supabase.from('registrations').update(updates).eq('id', registrationId);
+    if (error) return false;
 
-    // Try Supabase update
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        await client
-          .from('registrations')
-          .update({
-            current_stage: newStage,
-            procurement_status: newStatus,
-            delay_minutes: updated.delay_minutes,
-            bottleneck_remarks: updated.bottleneck_remarks,
-            queue_position: updated.queue_position,
-          })
-          .eq('id', registrationId);
-      } catch {
-        // Continue
-      }
-    }
+    await logActivityEvent('registration_updated', 'registration', registrationId, { new_stage: newStage, new_status: newStatus });
 
-    // Save sub-records if provided
     if (extraData?.qualityCheck) {
-      const qRecord: QualityCheckRecord = {
+      await supabase.from('quality_checks').insert({
         id: `qc_${Date.now()}`,
         registration_id: registrationId,
         moisture_percentage: extraData.qualityCheck.moisture_percentage || 13.5,
@@ -264,86 +201,69 @@ export const SupabaseDataService = {
         assayer_remarks: extraData.qualityCheck.assayer_remarks || 'Quality within FAQ standards.',
         status: newStatus,
         created_at: new Date().toISOString(),
-      };
-      const qcs = getLocalTable<QualityCheckRecord>('quality_checks');
-      qcs.push(qRecord);
-      setLocalTable('quality_checks', qcs);
+      });
     }
 
     if (extraData?.weighing) {
-      const wRecord: WeighingRecord = {
+      await supabase.from('weighing_records').insert({
         id: `wb_${Date.now()}`,
         registration_id: registrationId,
-        gross_weight: extraData.weighing.gross_weight || updated.quantity_quintals + 15,
+        gross_weight: extraData.weighing.gross_weight || prev.quantity_quintals + 15,
         tare_weight: extraData.weighing.tare_weight || 15,
-        net_weight: extraData.weighing.net_weight || updated.quantity_quintals,
+        net_weight: extraData.weighing.net_weight || prev.quantity_quintals,
         weighbridge_slip_number: extraData.weighing.weighbridge_slip_number || `WB-${Date.now().toString().slice(-6)}`,
         operator_name: operatorName,
         operator_remarks: extraData.weighing.operator_remarks || 'Electronic weighbridge verified.',
         status: newStatus,
         created_at: new Date().toISOString(),
-      };
-      const wbs = getLocalTable<WeighingRecord>('weighing_records');
-      wbs.push(wRecord);
-      setLocalTable('weighing_records', wbs);
+      });
     }
 
     if (extraData?.bagging) {
-      const bRecord: BaggingRecord = {
+      await supabase.from('bagging_records').insert({
         id: `bag_${Date.now()}`,
         registration_id: registrationId,
-        number_of_bags: extraData.bagging.number_of_bags || Math.round(updated.quantity_quintals * 2),
+        number_of_bags: extraData.bagging.number_of_bags || Math.round(prev.quantity_quintals * 2),
         gunny_bag_type: extraData.bagging.gunny_bag_type || 'Standard 50kg Jute',
         labour_delay_reported: !!extraData.bagging.labour_delay_reported,
         delay_reason: extraData.bagging.delay_reason,
         operator_remarks: extraData.bagging.operator_remarks || 'Gunny bagging completed.',
         status: newStatus,
         created_at: new Date().toISOString(),
-      };
-      const bags = getLocalTable<BaggingRecord>('bagging_records');
-      bags.push(bRecord);
-      setLocalTable('bagging_records', bags);
+      });
     }
 
     if (extraData?.jForm || newStatus === 'J_FORM_GENERATED' || newStatus === 'PROCUREMENT_COMPLETED') {
       const msp = 1950;
-      const total = updated.quantity_quintals * msp;
-      const jRecord: JFormRecord = {
+      const total = prev.quantity_quintals * msp;
+      await supabase.from('j_forms').insert({
         id: `jform_${Date.now()}`,
         registration_id: registrationId,
-        j_form_number: `JF-2026-${updated.token_number}-${Date.now().toString().slice(-4)}`,
-        quantity_procured: updated.quantity_quintals,
+        j_form_number: `JF-2026-${prev.token_number}-${Date.now().toString().slice(-4)}`,
+        quantity_procured: prev.quantity_quintals,
         msp_rate: msp,
         total_amount: total,
         issued_by: operatorName,
         issued_at: new Date().toISOString(),
         status: 'GENERATED',
-      };
-      const jforms = getLocalTable<JFormRecord>('j_forms');
-      jforms.push(jRecord);
-      setLocalTable('j_forms', jforms);
+      });
 
-      // Auto-create Payment Record
-      const payRecord: PaymentRecord = {
+      await supabase.from('payments').insert({
         id: `pay_${Date.now()}`,
         registration_id: registrationId,
-        farmer_id: updated.farmer_id,
+        farmer_id: prev.farmer_id,
         amount: total,
         msp_price: msp,
-        quantity: updated.quantity_quintals,
+        quantity: prev.quantity_quintals,
         status: 'PROCESSING',
         transaction_id: `KF-DBT-${Date.now().toString().slice(-8)}`,
         payment_date: new Date().toISOString(),
         bank_account_masked: 'State Bank of India (Aadhaar Seeded) •••• 8842',
         ifsc_masked: 'SBIN0020142',
         created_at: new Date().toISOString(),
-      };
-      const pays = getLocalTable<PaymentRecord>('payments');
-      pays.push(payRecord);
-      setLocalTable('payments', pays);
+      });
     }
 
-    // Create Audit Log
     await this.createAuditLog({
       registration_id: registrationId,
       stage: newStage,
@@ -353,78 +273,39 @@ export const SupabaseDataService = {
       remarks: extraData?.bottleneckRemarks || `Status updated to ${newStatus}`,
     });
 
-    // Send Farmer Notification
     await this.createNotification({
-      user_id: updated.farmer_id,
+      user_id: prev.farmer_id,
       title: `Procurement Update: ${newStage.replace('_', ' ')}`,
-      message: `Token #${updated.token_number}: Status advanced to ${newStatus.replace(/_/g, ' ')}.`,
+      message: `Token #${prev.token_number}: Status advanced to ${newStatus.replace(/_/g, ' ')}.`,
       channel: 'SMS',
     });
 
     return true;
   },
 
-  // 7. GET PAYMENTS
   async getPayments(farmerId?: string): Promise<PaymentRecord[]> {
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        let query = client.from('payments').select('*').order('created_at', { ascending: false });
-        if (farmerId) {
-          query = query.eq('farmer_id', farmerId);
-        }
-        const { data, error } = await query;
-        if (!error && data) return data;
-      } catch {
-        // Fallback
-      }
-    }
-    const all = getLocalTable<PaymentRecord>('payments');
+    let query = supabase.from('payments').select('*').order('created_at', { ascending: false });
     if (farmerId) {
-      return all.filter(p => p.farmer_id === farmerId);
+      query = query.eq('farmer_id', farmerId);
     }
-    return all;
+    const { data } = await query;
+    return data || [];
   },
 
-  // 8. UPDATE PAYMENT STATUS
   async updatePaymentStatus(paymentId: string, status: PaymentRecord['status']): Promise<boolean> {
-    const all = getLocalTable<PaymentRecord>('payments');
-    const index = all.findIndex(p => p.id === paymentId);
-    if (index === -1) return false;
-    all[index].status = status;
-    setLocalTable('payments', all);
-
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        await client.from('payments').update({ status }).eq('id', paymentId);
-      } catch {
-        // Ignore
-      }
-    }
-    return true;
+    const { error } = await supabase.from('payments').update({ status }).eq('id', paymentId);
+    return !error;
   },
 
-  // 9. GET NOTIFICATIONS
   async getNotifications(userId: string): Promise<NotificationItem[]> {
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        const { data, error } = await client
-          .from('notifications')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false });
-        if (!error && data) return data;
-      } catch {
-        // Fallback
-      }
-    }
-    const all = getLocalTable<NotificationItem>('notifications');
-    return all.filter(n => n.user_id === userId);
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    return data || [];
   },
 
-  // 10. CREATE NOTIFICATION
   async createNotification(notif: Omit<NotificationItem, 'id' | 'created_at' | 'read'>): Promise<NotificationItem> {
     const newNotif: NotificationItem = {
       ...notif,
@@ -432,67 +313,34 @@ export const SupabaseDataService = {
       read: false,
       created_at: new Date().toISOString(),
     };
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        await client.from('notifications').insert(newNotif);
-      } catch {
-        // Ignore
-      }
-    }
-    const all = getLocalTable<NotificationItem>('notifications');
-    all.unshift(newNotif);
-    setLocalTable('notifications', all);
+    await supabase.from('notifications').insert(newNotif);
     return newNotif;
   },
 
-  // 11. GET AUDIT LOGS
   async getAuditLogs(registrationId?: string): Promise<AuditLog[]> {
-    const all = getLocalTable<AuditLog>('audit_logs');
+    let query = supabase.from('audit_logs').select('*').order('timestamp', { ascending: false });
     if (registrationId) {
-      return all.filter(a => a.registration_id === registrationId);
+      query = query.eq('registration_id', registrationId);
     }
-    return all;
+    const { data } = await query;
+    return data || [];
   },
 
-  // 12. CREATE AUDIT LOG
   async createAuditLog(log: Omit<AuditLog, 'id' | 'timestamp'>): Promise<void> {
     const newLog: AuditLog = {
       ...log,
       id: `audit_${Date.now()}`,
       timestamp: new Date().toISOString(),
     };
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        await client.from('audit_logs').insert(newLog);
-      } catch {
-        // Ignore
-      }
-    }
-    const all = getLocalTable<AuditLog>('audit_logs');
-    all.unshift(newLog);
-    setLocalTable('audit_logs', all);
+    await supabase.from('audit_logs').insert(newLog);
   },
 
-  // 13. CLEAR ALL LOCAL DB FOR FRESH START
   clearAllDatabase() {
-    ['registrations', 'quality_checks', 'weighing_records', 'bagging_records', 'j_forms', 'payments', 'notifications', 'audit_logs'].forEach(table => {
-      localStorage.removeItem(LOCAL_DB_STORAGE_PREFIX + table);
-    });
+    // Only used for UI reset - do not actually wipe production database.
   },
 
-  // 14. GET CENTRES
   async getCentres(): Promise<Centre[]> {
-    const client = getSupabaseClient();
-    if (client) {
-      try {
-        const { data, error } = await client.from('procurement_centres').select('*');
-        if (!error && data && data.length > 0) return data;
-      } catch {
-        // Fallback
-      }
-    }
-    return INITIAL_CENTRES;
+    const { data } = await supabase.from('procurement_centres').select('*');
+    return data || [];
   },
 };

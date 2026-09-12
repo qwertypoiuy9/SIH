@@ -121,7 +121,7 @@ interface KisanFlowContextType {
 
 const KisanFlowContext = createContext<KisanFlowContextType | undefined>(undefined);
 
-export const KisanFlowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const KisanQProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<LanguageCode>('te');
   const [activePortal, setActivePortal] = useState<ActivePortalView>('login');
   const [farmerView, setFarmerView] = useState<FarmerSidebarView>('dashboard');
@@ -209,7 +209,7 @@ export const KisanFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   }, [navigateByRole]);
 
-  // ── Listen to Supabase Auth changes ──────────────────────────────────
+  // ── Listen to Supabase Auth changes & Setup Realtime ──────────────────────────────────
   useEffect(() => {
     let mounted = true;
 
@@ -225,6 +225,11 @@ export const KisanFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setAuthLoading(false);
         setActivePortal('login');
       }
+    });
+
+    // Unconditionally load all centres so the login page dropdown has full data
+    fetchCentresFromDB().then(c => {
+      if (c.length > 0) setCentres(c);
     });
 
     // Subscribe to auth changes
@@ -243,9 +248,29 @@ export const KisanFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     });
 
+    // Realtime Subscriptions
+    const realtimeChannel = supabase.channel('KisanQ-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'registrations' },
+        () => { if (mounted) refreshRegistrationsImpl(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payments' },
+        () => { if (mounted) refreshPaymentsImpl(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications' },
+        () => { if (mounted) refreshNotificationsImpl(); }
+      )
+      .subscribe();
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      supabase.removeChannel(realtimeChannel);
     };
   }, [loadProfileAndSetAuth]);
 
@@ -423,8 +448,8 @@ export const KisanFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 };
 
-export const useKisanFlow = (): KisanFlowContextType => {
+export const useKisanQ = (): KisanFlowContextType => {
   const ctx = useContext(KisanFlowContext);
-  if (!ctx) throw new Error('useKisanFlow must be used within KisanFlowProvider');
+  if (!ctx) throw new Error('useKisanQ must be used within KisanQProvider');
   return ctx;
 };

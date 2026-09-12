@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import {
   Home,
   Users,
@@ -59,13 +59,24 @@ export const OperatorDashboard: React.FC = () => {
     updateRegistrationStage,
     setIsVoiceAssistantOpen,
     language,
-  } = useKisanFlow();
+  } = useKisanQ();
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const operatorCentreId = authSession.user?.centre_id || 'centre_lakshmipur';
+
+  // ── Centre selection: use profile centre_id OR let operator pick ──────────
+  const profileCentreId = authSession.user?.centre_id || '';
+  const [selectedCentreId, setSelectedCentreId] = useState<string>(profileCentreId);
+
+  // When centres load, auto-select if profile has a centre_id
+  useEffect(() => {
+    if (profileCentreId && !selectedCentreId) setSelectedCentreId(profileCentreId);
+    else if (!selectedCentreId && centres.length > 0) setSelectedCentreId(centres[0].id);
+  }, [centres, profileCentreId]);
+
+  const operatorCentreId = selectedCentreId || (centres[0]?.id ?? '');
   const centre = centres.find(c => c.id === operatorCentreId) || centres[0];
 
-  // Operator-centre registrations
+  // Operator-centre registrations — ALL registrations for this centre
   const centreRegs = registrations.filter(r => r.centre_id === operatorCentreId);
 
   // Active queue: not completed or rejected
@@ -241,6 +252,25 @@ export const OperatorDashboard: React.FC = () => {
     { id: 'profile', label: '👤 Profile', icon: <User className="w-4 h-4" /> },
   ];
 
+  // ── PENDING APPROVAL CHECK ──
+  if (authSession.user?.role === 'operator' && authSession.user?.designation !== 'APPROVED') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
+          <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-black text-stone-800 mb-2">Pending Approval</h2>
+          <p className="text-stone-600 mb-6">
+            Your registration as a Mandi Operator is currently pending approval from the State Government. 
+            You will be granted access once an official verifies and approves your account.
+          </p>
+          <button onClick={logoutUser} className="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-xl transition-colors">
+            Log Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex bg-stone-100 text-stone-900 font-sans">
       {/* MOBILE TOGGLE */}
@@ -256,13 +286,27 @@ export const OperatorDashboard: React.FC = () => {
       {/* SIDEBAR */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-stone-950 text-white flex flex-col justify-between transition-transform duration-300 transform lg:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-5 border-b border-stone-800">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-2">
             <Building2 className="w-5 h-5 text-amber-500" />
-            <span className="font-black text-lg tracking-tight text-white">KisanFlow</span>
+            <span className="font-black text-lg tracking-tight text-white">KisanQ</span>
             <span className="text-[10px] bg-amber-900 text-amber-200 px-2 py-0.5 rounded-full font-bold uppercase">Operator</span>
           </div>
-          <p className="text-xs text-stone-400 truncate">{centre.name}</p>
+          {/* Centre picker */}
+          {centres.length > 1 ? (
+            <select
+              value={selectedCentreId}
+              onChange={e => setSelectedCentreId(e.target.value)}
+              className="w-full mt-1 bg-stone-800 border border-stone-700 text-amber-200 text-[11px] font-semibold rounded-xl px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-500"
+            >
+              {centres.map(c => (
+                <option key={c.id} value={c.id} className="bg-stone-900">{c.name}</option>
+              ))}
+            </select>
+          ) : (
+            <p className="text-xs text-stone-400 truncate mt-1">{centre?.name || 'Loading...'}</p>
+          )}
         </div>
+
 
         <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
@@ -673,12 +717,20 @@ export const OperatorDashboard: React.FC = () => {
         ═══════════════════════════════════════════════════════ */}
         {(operatorView === 'farmer_registrations' || operatorView === 'all_bookings' || operatorView === 'token_management' || operatorView === 'live_queue') && (
           <div className="max-w-6xl mx-auto space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex justify-between items-center">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex flex-wrap justify-between items-center gap-3">
               <div>
-                <h2 className="text-xl font-black text-stone-900">All Registered Farmers & Tokens</h2>
-                <p className="text-xs text-stone-500">Queried from Supabase for {centre.name}</p>
+                <h2 className="text-xl font-black text-stone-900">All Farmer Registrations</h2>
+                <p className="text-xs text-stone-500">Centre: <span className="font-bold text-amber-700">{centre?.name || 'All Centres'}</span> · Live from Supabase</p>
               </div>
-              <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">{centreRegs.length} total</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">{centreRegs.length} registrations</span>
+                <button
+                  onClick={() => refreshRegistrations()}
+                  className="flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-stone-900 border border-stone-300 hover:border-stone-500 px-3 py-1.5 rounded-xl cursor-pointer transition-all"
+                >
+                  <RotateCw className="w-3.5 h-3.5" /> Refresh
+                </button>
+              </div>
             </div>
             {centreRegs.length > 0 ? (
               <div className="bg-white rounded-3xl border border-stone-200 overflow-auto shadow-sm">
@@ -692,7 +744,7 @@ export const OperatorDashboard: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-stone-100">
                     {centreRegs.map((r) => (
-                      <tr key={r.id} className="hover:bg-stone-50">
+                      <tr key={r.id} className="hover:bg-stone-50 cursor-pointer" onClick={() => { setSelectedRegId(r.id); setOperatorView('procurement_processing'); }}>
                         <td className="p-4 font-mono font-black text-emerald-800 text-sm">#{r.token_number}</td>
                         <td className="p-4 font-bold text-stone-900">{r.farmer_name}</td>
                         <td className="p-4 font-mono text-stone-500">{r.phone}</td>
@@ -700,19 +752,26 @@ export const OperatorDashboard: React.FC = () => {
                         <td className="p-4 font-bold">{r.quantity_quintals} Qtl</td>
                         <td className="p-4 font-mono text-stone-500">{r.vehicle_number}</td>
                         <td className="p-4 font-bold text-amber-800">{r.current_stage.replace(/_/g, ' ')}</td>
-                        <td className="p-4"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-700">{r.procurement_status.replace(/_/g, ' ')}</span></td>
+                        <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.procurement_status === 'PROCUREMENT_COMPLETED' ? 'bg-emerald-100 text-emerald-700' : r.procurement_status === 'QUALITY_REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'}`}>{r.procurement_status.replace(/_/g, ' ')}</span></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center">
-                <p className="font-bold text-stone-900">No registrations found.</p>
+              <div className="bg-white rounded-3xl p-10 border border-stone-200 text-center space-y-3">
+                <div className="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto border border-amber-200">
+                  <Users className="w-7 h-7 text-amber-500" />
+                </div>
+                <p className="font-bold text-stone-900 text-sm">No registrations found for this centre</p>
+                <p className="text-xs text-stone-500">Centre: <span className="font-semibold">{centre?.name}</span></p>
+                <p className="text-xs text-stone-400">Farmers who book a slot at this centre will appear here automatically via Supabase Realtime.</p>
+                <button onClick={() => refreshRegistrations()} className="mt-2 text-xs font-bold text-amber-700 underline cursor-pointer">Click to refresh</button>
               </div>
             )}
           </div>
         )}
+
 
         {/* ═══════════════════════════════════════════════════════
             3. J-FORMS WITH AI INTELLIGENCE

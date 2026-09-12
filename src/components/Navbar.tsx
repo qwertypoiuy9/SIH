@@ -1,12 +1,12 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useKisanFlow } from '../context/KisanFlowContext';
+import { useKisanQ } from '../context/KisanFlowContext';
 import { SUPPORTED_LANGUAGES } from '../translations';
 import { Mic, Languages, LogOut, Phone } from 'lucide-react';
 import { LanguageCode } from '../types';
 
 export const Navbar: React.FC = () => {
-  const { language, setLanguage, authSession, logoutUser, setIsVoiceAssistantOpen, setIsPhoneModalOpen } = useKisanFlow();
+  const { language, setLanguage, authSession, logoutUser, setIsVoiceAssistantOpen, setIsPhoneModalOpen } = useKisanQ();
   const navigate = useNavigate();
 
   return (
@@ -19,7 +19,7 @@ export const Navbar: React.FC = () => {
           <span className="text-2xl">🌾</span>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-lg text-stone-900 tracking-tight leading-none">KisanFlow</span>
+              <span className="font-black text-lg text-stone-900 tracking-tight leading-none">KisanQ</span>
               <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">MSP 2026-27</span>
             </div>
             <p className="text-[10px] text-stone-500 font-medium">National Smart Mandi Procurement</p>

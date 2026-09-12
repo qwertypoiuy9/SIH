@@ -1,5 +1,5 @@
 /**
- * KisanFlow — Supabase Auth Client
+ * KisanQ — Supabase Auth Client
  * Single source of truth for the authenticated Supabase client.
  * Uses ONLY environment variables — no hardcoded credentials.
  */
@@ -11,7 +11,7 @@ const SUPA_URL = (import.meta as unknown as { env: Record<string, string> }).env
 const SUPA_KEY = (import.meta as unknown as { env: Record<string, string> }).env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!SUPA_URL || !SUPA_KEY) {
-  console.error('[KisanFlow] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY not set in .env.local');
+  console.error('[KisanQ] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY not set in .env.local');
 }
 
 export const supabase: SupabaseClient = createClient(SUPA_URL, SUPA_KEY, {
@@ -60,7 +60,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
         }
         // If REQUEST_DENIED / billing issue, fall through to Nominatim
         if (data.status === 'REQUEST_DENIED' || data.status === 'OVER_QUERY_LIMIT') {
-          console.warn('[KisanFlow] Google Maps billing not enabled, using Nominatim fallback');
+          console.warn('[KisanQ] Google Maps billing not enabled, using Nominatim fallback');
         }
       }
     } catch { /* fall through */ }
@@ -76,7 +76,7 @@ async function reverseGeocodeNominatim(lat: number, lng: number): Promise<Revers
     const res = await fetch(url, {
       headers: {
         'Accept-Language': 'en',
-        'User-Agent': 'KisanFlow-MSP/1.0 (https://kisanflow-app.vercel.app)',
+        'User-Agent': 'KisanQ-MSP/1.0 (https://KisanQ-app.vercel.app)',
       },
     });
     if (!res.ok) return null;
@@ -137,7 +137,7 @@ export async function geocodeAddress(query: string): Promise<{ lat: number; lng:
   // Nominatim fallback
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=in`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en', 'User-Agent': 'KisanFlow-MSP/1.0' } });
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en', 'User-Agent': 'KisanQ-MSP/1.0' } });
     if (!res.ok) return null;
     const data = await res.json();
     if (data?.[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
@@ -172,7 +172,7 @@ export async function upsertProfile(profile: UserProfile): Promise<{ error: stri
     updated_at: new Date().toISOString(),
   });
   if (error) {
-    console.warn('[KisanFlow] upsertProfile error:', error.message);
+    console.warn('[KisanQ] upsertProfile error:', error.message);
     return { error: error.message };
   }
   return { error: null };
@@ -261,11 +261,12 @@ export async function signUpWithEmail(params: SignUpParams): Promise<{
     name: params.name,
     phone: params.phone,
     email: params.email,
+    is_approved: params.role === 'operator' ? false : true,
     address: params.address,
-    village: params.village,
-    mandal: params.mandal,
-    district: params.district,
-    state: params.state,
+    village: coords?.village || params.village,
+    mandal: coords?.mandal || params.mandal,
+    district: coords?.district || params.district,
+    state: coords?.state || params.state,
     pincode: params.pincode,
     latitude: coords?.lat,
     longitude: coords?.lng,
@@ -303,7 +304,7 @@ export async function signUpWithEmail(params: SignUpParams): Promise<{
     // If sign-in also failed (email not confirmed yet), store profile data in localStorage
     // so we can upsert it when they confirm and come back
     try {
-      localStorage.setItem(`kisanflow_pending_profile_${data.user.id}`, JSON.stringify(profile));
+      localStorage.setItem(`KisanQ_pending_profile_${data.user.id}`, JSON.stringify(profile));
     } catch { /* ignore */ }
   }
 
@@ -315,7 +316,7 @@ export async function signUpWithEmail(params: SignUpParams): Promise<{
   };
 }
 
-export async function signInWithEmail(email: string, password: string): Promise<{
+export async function signInWithEmail(email: string, password: string, expectedRole?: string): Promise<{
   session: Session | null;
   error: string | null;
 }> {
@@ -336,7 +337,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
 
   // After successful login, check if there's a pending profile to upsert
   if (data.session) {
-    const pendingKey = `kisanflow_pending_profile_${data.user.id}`;
+    const pendingKey = `KisanQ_pending_profile_${data.user.id}`;
     const pendingProfile = localStorage.getItem(pendingKey);
     if (pendingProfile) {
       try {
@@ -344,6 +345,18 @@ export async function signInWithEmail(email: string, password: string): Promise<
         await upsertProfile(profile);
         localStorage.removeItem(pendingKey);
       } catch { /* ignore */ }
+    }
+    
+    // Check if expected role matches the user's actual profile role
+    if (expectedRole) {
+      const profileData = await getProfile(data.user.id);
+      if (profileData && profileData.role !== expectedRole) {
+        // Log them out immediately if they are trying to log into the wrong portal
+        await supabase.auth.signOut();
+        const readableExpectedRole = expectedRole === 'government' ? 'Officer' : expectedRole;
+        const readableActualRole = profileData.role === 'government' ? 'Officer' : profileData.role;
+        return { session: null, error: `Invalid login portal. You are trying to login as a ${readableExpectedRole}, but your account is registered as a ${readableActualRole}.` };
+      }
     }
   }
 
@@ -357,4 +370,23 @@ export async function signOut(): Promise<void> {
 export async function getSession(): Promise<Session | null> {
   const { data } = await supabase.auth.getSession();
   return data.session;
+}
+
+// ── Operator Approvals ──
+export async function getAllOperators(): Promise<UserProfile[]> {
+  const { data, error } = await supabase.from('profiles').select('*').eq('role', 'operator');
+  if (error) {
+    console.error('Error fetching operators:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export async function approveOperator(userId: string): Promise<boolean> {
+  const { error } = await supabase.from('profiles').update({ designation: 'APPROVED' }).eq('id', userId);
+  if (error) {
+    console.error('Error approving operator:', error);
+    return false;
+  }
+  return true;
 }

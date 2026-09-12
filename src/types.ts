@@ -16,6 +16,7 @@ export interface UserProfile {
   phone: string;
   email?: string;
   maskedPhone?: string;
+  is_approved?: boolean;
   // Full address
   address?: string;
   village?: string;
@@ -275,6 +276,7 @@ export type FarmerSidebarView =
   | 'payments'
   | 'my_registrations'
   | 'procurement_centers'
+  | 'crops_prices'
   | 'weather'
   | 'notifications'
   | 'phone_call'
@@ -302,6 +304,7 @@ export type GovernmentSidebarView =
   | 'overview'
   | 'farmers'
   | 'operators'
+  | 'operator_approvals'
   | 'live_queue'
   | 'all_registrations'
   | 'procurement_monitoring'

@@ -1,84 +1,110 @@
-/**
- * KisanFlow Procurement Centre Service
- * Discovers centres dynamically:
- *  1. From Supabase `procurement_centres` table (primary, admin-managed)
- *  2. Via OpenStreetMap Overpass API to find government agricultural facilities nearby (free)
- *  3. Calculates real distance using Haversine from farmer's geocoded location
+﻿/**
+ * KisanQ Procurement Centre Service
+ * Priority order:
+ *  1. Supabase `procurement_centres` table — Telangana centres first, sorted by distance
+ *  2. OSM Overpass fallback for discovery
+ *  3. INITIAL_CENTRES static fallback (offline)
  */
 import { Centre } from '../types';
 import { supabase } from '../utils/supabaseAuth';
 import { haversineKm } from './weatherService';
+import { INITIAL_CENTRES } from '../data/mockData';
 
 export interface CentreFilter {
-  showOpenOnly: boolean;
+  showOpenOnly?: boolean;
   acceptedCrop?: string;
   maxDistanceKm?: number;
-  showGovernmentOnly?: boolean;
+  district?: string;
+  mandal?: string;
+  pincode?: string;
+  stateFilter?: 'telangana_first' | 'all';
 }
 
-// ── Fetch centres from Supabase, enriched with distance from farmer ────────
+// ── Fetch centres from Supabase — Telangana first, then by distance ─────────
 export async function fetchCentresFromDB(
   farmerLat?: number,
   farmerLng?: number,
   filter?: CentreFilter
 ): Promise<Centre[]> {
-  const { data, error } = await supabase
-    .from('procurement_centres')
-    .select('*')
-    .order('name', { ascending: true });
+  try {
+    let query = supabase
+      .from('procurement_centres')
+      .select('*');
 
-  if (error || !data) return [];
+    // Apply district filter if specified
+    if (filter?.district) {
+      query = query.ilike('district', `%${filter.district}%`);
+    }
+    if (filter?.mandal) {
+      query = query.ilike('mandal', `%${filter.mandal}%`);
+    }
+    if (filter?.pincode) {
+      query = query.eq('pincode', filter.pincode);
+    }
 
-  let centres: Centre[] = data.map((row) => ({
-    id: row.id,
-    name: row.name,
-    address: row.address || '',
-    district: row.district,
-    state: row.state,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    capacity_per_day: row.capacity_per_day || 150,
-    current_queue: row.current_queue || 0,
-    status: row.status || 'OPTIMAL',
-    distance_km: 0,
-    avg_processing_mins: row.avg_processing_mins || 45,
-    open_hours: row.open_hours || '08:00 AM - 06:00 PM',
-    counters_active: row.active_counters || row.counters_active || 3,
-    accepted_crops: row.accepted_crops || [],
-    contact: row.contact || '',
-    is_open: isCurrentlyOpen(row.open_hours || '08:00 AM - 06:00 PM'),
-  }));
+    const { data, error } = await query.order('name', { ascending: true });
+    if (error || !data || data.length === 0) return INITIAL_CENTRES;
 
-  // Calculate distance if farmer coords available
-  if (farmerLat !== undefined && farmerLng !== undefined) {
-    centres = centres.map((c) => ({
-      ...c,
-      distance_km:
-        c.latitude && c.longitude
+    let centres: Centre[] = data.map((row) => ({
+      id: row.id,
+      name: row.name,
+      address: row.address || '',
+      district: row.district,
+      state: row.state,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      capacity_per_day: row.capacity_per_day || 150,
+      current_queue: row.current_queue || 0,
+      status: (row.status || 'OPTIMAL') as Centre['status'],
+      distance_km: 0,
+      avg_processing_mins: row.avg_processing_mins || 45,
+      open_hours: row.open_hours || '08:00 AM - 06:00 PM',
+      counters_active: row.active_counters || row.counters_active || 3,
+      accepted_crops: row.accepted_crops || [],
+      contact: row.contact || '',
+      is_open: isCurrentlyOpen(row.open_hours || '08:00 AM - 06:00 PM'),
+    }));
+
+    // Calculate distances
+    if (farmerLat !== undefined && farmerLng !== undefined) {
+      centres = centres.map((c) => ({
+        ...c,
+        distance_km: c.latitude && c.longitude
           ? Math.round(haversineKm(farmerLat, farmerLng, c.latitude, c.longitude) * 10) / 10
           : 999,
-    }));
-    centres.sort((a, b) => a.distance_km - b.distance_km);
-  }
+      }));
+    }
+
+    // Sort: Telangana first, then by distance
+    centres.sort((a, b) => {
+      const aTS = a.state === 'Telangana' ? 0 : 1;
+      const bTS = b.state === 'Telangana' ? 0 : 1;
+      if (aTS !== bTS) return aTS - bTS;
+      return a.distance_km - b.distance_km;
+    });
 
   // Apply filters
-  if (filter?.showOpenOnly) {
-    centres = centres.filter((c) => c.is_open);
-  }
-  if (filter?.acceptedCrop) {
-    centres = centres.filter(
-      (c) =>
-        !c.accepted_crops?.length ||
-        c.accepted_crops.some((crop) =>
-          crop.toLowerCase().includes(filter.acceptedCrop!.toLowerCase())
-        )
-    );
-  }
-  if (filter?.maxDistanceKm) {
-    centres = centres.filter((c) => c.distance_km <= filter.maxDistanceKm!);
-  }
+    // Apply filters
+    if (filter?.showOpenOnly) {
+      centres = centres.filter((c) => c.is_open);
+    }
+    if (filter?.acceptedCrop) {
+      centres = centres.filter(
+        (c) =>
+          !c.accepted_crops?.length ||
+          c.accepted_crops.some((crop) =>
+            crop.toLowerCase().includes(filter.acceptedCrop!.toLowerCase())
+          )
+      );
+    }
+    if (filter?.maxDistanceKm) {
+      centres = centres.filter((c) => c.distance_km <= filter.maxDistanceKm!);
+    }
 
-  return centres;
+    return centres;
+  } catch {
+    return INITIAL_CENTRES;
+  }
 }
 
 // ── Discover nearby procurement facilities via OSM Overpass (fallback) ────

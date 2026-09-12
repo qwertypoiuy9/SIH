@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+﻿import React, { useState, useEffect } from 'react';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import { soundController } from '../../utils/audio';
 import { SUPPORTED_LANGUAGES } from '../../translations';
 import {
@@ -38,7 +38,7 @@ export const PhoneSimulatorModal: React.FC = () => {
     crops,
     payments,
     bookFarmerSlot,
-  } = useKisanFlow();
+  } = useKisanQ();
 
   const [callStage, setCallStage] = useState<CallStage>('idle');
   const [currentPrompt, setCurrentPrompt] = useState<string>('');
@@ -95,7 +95,7 @@ export const PhoneSimulatorModal: React.FC = () => {
       const greetings: Record<LanguageCode, string> = {
         te: `నమస్తే! కిసాన్ ఫ్లో టోల్ ఫ్రీ 1800-425-4747 కి స్వాగతం. మీ టోకెన్, క్యూ లేదా పంట స్లాట్ బుకింగ్ గురించి నేరుగా మాట్లాడండి లేదా కీప్యాడ్ ఉపయోగించండి.`,
         hi: `नमस्ते! किसानफ्लो टोल फ्री 1800-425-4747 में आपका स्वागत है। अपने टोकन, कतार या स्लॉट बुकिंग के बारे में बोलकर बताएं या कीपैड दबाएं।`,
-        en: `Hello! Welcome to KisanFlow Toll-Free 1800-425-4747. Speak directly to ask about your token, queue wait time, or book a slot.`,
+        en: `Hello! Welcome to KisanQ Toll-Free 1800-425-4747. Speak directly to ask about your token, queue wait time, or book a slot.`,
         kn: `ನಮಸ್ಕಾರ! ಕಿಸಾನ್‌ಫ್ಲೋ ಟೋಲ್ ಫ್ರೀ 1800-425-4747 ಗೆ ಸುಸ್ವಾಗತ. ನಿಮ್ಮ ಟೋಕನ್ ಅಥವಾ ಕ್ಯೂ ಬಗ್ಗೆ ಮಾತನಾಡಿ.`,
         ta: `வணக்கம்! கிசான்ஃப்ளோ கட்டணமில்லா உதவி எண் 1800-425-4747 க்கு வரவேற்கிறோம். பேசத் தொடங்குங்கள்.`,
         bn: `নমস্কার! কিষাণফ্লো টোল ফ্রি 1800-425-4747-এ স্বাগতম। কথা বলুন বা কিপ্যাড চাপুন।`,

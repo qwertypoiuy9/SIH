@@ -1,10 +1,10 @@
-// SMSDrawerModal — now shows notifications from context
+﻿// SMSDrawerModal — now shows notifications from context
 import React from 'react';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import { MessageSquare, X, CheckCheck, ShieldCheck } from 'lucide-react';
 
 export const SMSDrawerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
-  const { notifications } = useKisanFlow();
+  const { notifications } = useKisanQ();
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-end">
@@ -16,7 +16,7 @@ export const SMSDrawerModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
             </div>
             <div>
               <h2 className="text-sm font-black text-white">SMS Notifications</h2>
-              <p className="text-[11px] text-stone-400">KisanFlow official alerts</p>
+              <p className="text-[11px] text-stone-400">KisanQ official alerts</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-stone-800 text-stone-400 hover:text-white cursor-pointer">

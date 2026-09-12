@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { KisanFlowProvider, useKisanFlow } from './context/KisanFlowContext';
+import { KisanQProvider, useKisanQ } from './context/KisanFlowContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Navbar } from './components/Navbar';
 import { LoginPage } from './components/auth/LoginPage';
@@ -15,14 +15,14 @@ import { PhoneSimulatorModal } from './components/phone/PhoneSimulatorModal';
 // ── Wires React Router's navigate into the context so context can redirect ──
 const NavigateBridge: React.FC = () => {
   const navigate = useNavigate();
-  const { setNavigate } = useKisanFlow();
+  const { setNavigate } = useKisanQ();
   useEffect(() => { setNavigate(navigate); }, [navigate, setNavigate]);
   return null;
 };
 
 // ── After login redirect based on role ──────────────────────────────────────
 const PortalRedirect: React.FC = () => {
-  const { authSession, authLoading } = useKisanFlow();
+  const { authSession, authLoading } = useKisanQ();
   if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
@@ -37,14 +37,14 @@ const PortalRedirect: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { authSession, authLoading } = useKisanFlow();
+  const { authSession, authLoading } = useKisanQ();
 
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold text-stone-500">Loading KisanFlow...</p>
+          <p className="text-sm font-semibold text-stone-500">Loading KisanQ...</p>
         </div>
       </div>
     );
@@ -102,9 +102,9 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <BrowserRouter>
-      <KisanFlowProvider>
+      <KisanQProvider>
         <AppContent />
-      </KisanFlowProvider>
+      </KisanQProvider>
     </BrowserRouter>
   );
 }

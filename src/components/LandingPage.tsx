@@ -1,21 +1,15 @@
-import React from 'react';
-import { useKisanFlow } from '../context/KisanFlowContext';
-import { translations, SUPPORTED_LANGUAGES } from '../translations';
+﻿import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useKisanQ } from '../context/KisanFlowContext';
+import { translations } from '../translations';
 import {
-  Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-  Users,
-  Building2,
-  Landmark,
-  Scale,
-  CreditCard,
-  Mic,
+  Sparkles, ArrowRight, ShieldCheck, CheckCircle2,
+  Users, Building2, Landmark, Scale, CreditCard, Mic,
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
-  const { language, setActivePortal, setIsVoiceAssistantOpen } = useKisanFlow();
+  const { language, setIsVoiceAssistantOpen } = useKisanQ();
+  const navigate = useNavigate();
   const t = translations[language];
 
   return (
@@ -54,8 +48,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
-              onClick={() => setActivePortal('login')}
-              className="px-7 py-3.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-sm rounded-2xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-2"
+              onClick={() => navigate('/login')}
             >
               <span>Access Portal (లాగిన్ అవ్వండి)</span>
               <ArrowRight className="w-4 h-4" />
@@ -91,7 +84,7 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => setActivePortal('login')}
+              onClick={() => navigate('/login')}
               className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold rounded-xl cursor-pointer"
             >
               Farmer Access →
@@ -110,7 +103,7 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => setActivePortal('login')}
+              onClick={() => navigate('/login')}
               className="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl cursor-pointer"
             >
               Operator Access →
@@ -129,7 +122,7 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => setActivePortal('login')}
+              onClick={() => navigate('/login')}
               className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-bold rounded-xl cursor-pointer"
             >
               Officer Access →

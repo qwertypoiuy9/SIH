@@ -1,11 +1,11 @@
-// DemoTourBar — legacy demo stepper, preserved but simplified
+﻿// DemoTourBar — legacy demo stepper, preserved but simplified
 import React, { useState } from 'react';
-import { useKisanFlow } from '../context/KisanFlowContext';
+import { useKisanQ } from '../context/KisanFlowContext';
 import { PlayCircle } from 'lucide-react';
 
 export const DemoTourBar: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { setActivePortal, setLanguage, setIsPhoneModalOpen } = useKisanFlow();
+  const { setActivePortal, setLanguage, setIsPhoneModalOpen } = useKisanQ();
 
   return (
     <aside className="bg-stone-900 text-stone-100 border-b border-stone-800 text-xs py-1.5 px-3">

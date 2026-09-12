@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import { fetchCentresFromDB, discoverNearbyViaOSM, CentreFilter } from '../../services/centreService';
 import { Centre } from '../../types';
 import {
@@ -49,7 +49,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export const ProcurementCentersPage: React.FC = () => {
-  const { authSession, centres: ctxCentres, crops, setFarmerView, bookFarmerSlot } = useKisanFlow();
+  const { authSession, centres: ctxCentres, crops, setFarmerView, bookFarmerSlot } = useKisanQ();
   const profile = authSession.user;
 
   const [centres, setCentres] = useState<Centre[]>(ctxCentres);

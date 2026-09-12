@@ -1,5 +1,5 @@
-/**
- * KisanFlow Weather Service
+﻿/**
+ * KisanQ Weather Service
  * Uses OpenWeatherMap One Call API 3.0 (free tier: 1,000 calls/day)
  * Falls back gracefully if key is missing or API fails.
  */

@@ -1,6 +1,6 @@
-import React from 'react';
+﻿import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { authSession, authLoading } = useKisanFlow();
+  const { authSession, authLoading } = useKisanQ();
   const location = useLocation();
 
   if (authLoading) {

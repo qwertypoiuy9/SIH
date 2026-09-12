@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import { translations } from '../../translations';
 import {
   Home, Calendar, Ticket, Users, FileText, CreditCard, ListOrdered,
   Bell, Mic, User, LogOut, ChevronRight, Clock, CheckCircle2,
   Menu, X, ArrowRight, Phone, Sparkles, Loader2, Bot, Zap,
-  AlertCircle, MapPin, CloudSun,
+  AlertCircle, MapPin, CloudSun, TrendingUp,
 } from 'lucide-react';
 import { FarmerSidebarView } from '../../types';
 import { getSlotRecommendation, generateSmartNotification, SlotRecommendation } from '../../services/aiAssistantService';
 import { ProcurementCentersPage } from '../centers/ProcurementCentersPage';
 import { WeatherDashboard } from '../weather/WeatherDashboard';
+import { CropPricePanel } from './CropPricePanel';
 
 export const FarmerDashboard: React.FC = () => {
   const {
@@ -27,7 +28,7 @@ export const FarmerDashboard: React.FC = () => {
     bookFarmerSlot,
     setIsVoiceAssistantOpen,
     setIsPhoneModalOpen,
-  } = useKisanFlow();
+  } = useKisanQ();
 
   const t = translations[language];
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -138,6 +139,7 @@ export const FarmerDashboard: React.FC = () => {
     { id: 'payments', label: '💰 Payments', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'my_registrations', label: '📋 My Registrations', icon: <ListOrdered className="w-4 h-4" /> },
     { id: 'procurement_centers', label: '📍 Procurement Centers', icon: <MapPin className="w-4 h-4" /> },
+    { id: 'crops_prices' as FarmerSidebarView, label: '🌾 Crops & Prices', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'weather', label: '🌦️ Weather & Alerts', icon: <CloudSun className="w-4 h-4" /> },
     { id: 'notifications', label: '🔔 Notifications', icon: <Bell className="w-4 h-4" /> },
     { id: 'phone_call', label: '📞 Toll-Free Phone Call', icon: <Phone className="w-4 h-4" /> },
@@ -159,7 +161,7 @@ export const FarmerDashboard: React.FC = () => {
         <div className="p-5 border-b border-emerald-900">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">🌾</span>
-            <span className="font-black text-lg tracking-tight text-white">KisanFlow</span>
+            <span className="font-black text-lg tracking-tight text-white">KisanQ</span>
             <span className="text-[10px] bg-emerald-800 text-emerald-200 px-2 py-0.5 rounded-full font-bold uppercase">Farmer</span>
           </div>
           <p className="text-xs text-emerald-400 font-medium">Farmer Access Portal</p>
@@ -224,7 +226,7 @@ export const FarmerDashboard: React.FC = () => {
                 className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-700 to-emerald-900 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Mic className="w-4 h-4 text-amber-300 animate-pulse" />
-                <span>Talk to KisanFlow AI Assistant</span>
+                <span>Talk to KisanQ AI Assistant</span>
               </button>
             </div>
 
@@ -357,7 +359,7 @@ export const FarmerDashboard: React.FC = () => {
                 <div>
                   <label className="block text-xs font-bold text-stone-700 uppercase mb-2">1. Select Crop</label>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {crops.map((c) => {
+                    {crops.filter(c => c.msp_per_quintal > 0).map((c) => {
                       const cropFirstWord = c.name.split(' ')[0];
                       const isSelected = crop === cropFirstWord;
                       return (
@@ -706,6 +708,13 @@ export const FarmerDashboard: React.FC = () => {
         {farmerView === 'procurement_centers' && (
           <div className="p-4 sm:p-8">
             <ProcurementCentersPage />
+          </div>
+        )}
+
+        {/* ═══ CROPS & PRICES ═══ */}
+        {farmerView === 'crops_prices' && (
+          <div className="p-4 sm:p-8">
+            <CropPricePanel />
           </div>
         )}
 

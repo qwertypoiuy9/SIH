@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import {
   Landmark,
   Users,
@@ -26,8 +26,9 @@ import {
   Zap,
   RefreshCw,
 } from 'lucide-react';
-import { GovernmentSidebarView } from '../../types';
+import { GovernmentSidebarView, UserProfile } from '../../types';
 import { getBottleneckPredictions, BottleneckPrediction } from '../../services/aiAssistantService';
+import { getAllOperators, approveOperator } from '../../utils/supabaseAuth';
 import { WeatherDashboard } from '../weather/WeatherDashboard';
 
 const SEVERITY_STYLES: Record<BottleneckPrediction['severity'], { badge: string; border: string; bg: string; icon: string }> = {
@@ -47,7 +48,7 @@ export const GovernmentDashboard: React.FC = () => {
     registrations,
     payments,
     setIsVoiceAssistantOpen,
-  } = useKisanFlow();
+  } = useKisanQ();
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -68,8 +69,30 @@ export const GovernmentDashboard: React.FC = () => {
   // ── AI Bottleneck Prediction state ──
   const [predictions, setPredictions] = useState<BottleneckPrediction[]>([]);
   const [isLoadingPredictions, setIsLoadingPredictions] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [operatorsList, setOperatorsList] = useState<UserProfile[]>([]);
+  const [loadingOperators, setLoadingOperators] = useState(false);
   const [predictionsLoaded, setPredictionsLoaded] = useState(false);
   const [predictionTimestamp, setPredictionTimestamp] = useState<string>('');
+
+  // Fetch Operator Approvals
+  const fetchOperators = useCallback(async () => {
+    setLoadingOperators(true);
+    const ops = await getAllOperators();
+    setOperatorsList(ops);
+    setLoadingOperators(false);
+  }, []);
+
+  useEffect(() => {
+    fetchOperators();
+  }, [fetchOperators]);
+
+  const handleApproveOperator = async (userId: string) => {
+    const success = await approveOperator(userId);
+    if (success) {
+      setOperatorsList(prev => prev.map(op => op.id === userId ? { ...op, designation: 'APPROVED' } : op));
+    }
+  };
 
   const loadPredictions = useCallback(async () => {
     setIsLoadingPredictions(true);
@@ -93,9 +116,10 @@ export const GovernmentDashboard: React.FC = () => {
 
   const navItems: { id: GovernmentSidebarView; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: '🏠 Overview', icon: <Landmark className="w-4 h-4" /> },
-    { id: 'farmers', label: '👨‍🌾 Farmers', icon: <Users className="w-4 h-4" /> },
-    { id: 'operators', label: '👷 Mandi Operators', icon: <Building className="w-4 h-4" /> },
-    { id: 'live_queue', label: '🚜 Live Queue', icon: <ListOrdered className="w-4 h-4" /> },
+    { id: 'farmers', label: '🌾 Farmers', icon: <Users className="w-4 h-4" /> },
+    { id: 'operators', label: '👷 Mandi Operators', icon: <CheckCircle2 className="w-4 h-4" /> },
+    { id: 'operator_approvals', label: '✅ Operator Approvals', icon: <CheckCircle2 className="w-4 h-4 text-amber-400" /> },
+    { id: 'live_queue', label: '⏱️ Live Queues', icon: <Clock className="w-4 h-4" /> },
     { id: 'all_registrations', label: '📋 All Registrations', icon: <ListOrdered className="w-4 h-4" /> },
     { id: 'procurement_monitoring', label: '⚙️ Procurement Monitoring', icon: <Activity className="w-4 h-4" /> },
     { id: 'payments', label: '💰 Payments', icon: <CreditCard className="w-4 h-4" /> },
@@ -120,7 +144,7 @@ export const GovernmentDashboard: React.FC = () => {
         <div className="p-5 border-b border-slate-800">
           <div className="flex items-center gap-2 mb-1">
             <Landmark className="w-5 h-5 text-blue-400" />
-            <span className="font-black text-lg tracking-tight text-white">KisanFlow</span>
+            <span className="font-black text-lg tracking-tight text-white">KisanQ</span>
             <span className="text-[10px] bg-blue-900 text-blue-200 px-2 py-0.5 rounded-full font-bold uppercase">Govt</span>
           </div>
           <p className="text-xs text-slate-400 font-medium">State Command Portal</p>
@@ -200,52 +224,58 @@ export const GovernmentDashboard: React.FC = () => {
               ))}
             </div>
 
-            {/* Centre Monitoring Cards */}
+            {/* Centre Monitoring – Compact Table */}
             <div className="space-y-3">
-              <h3 className="font-black text-base text-stone-900">Procurement Centres Under Jurisdiction</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {centres.map((c) => {
-                  const centreCount = registrations.filter(r => r.centre_id === c.id).length;
-                  const waiting = registrations.filter(
-                    r => r.centre_id === c.id && r.procurement_status !== 'PROCUREMENT_COMPLETED' && r.procurement_status !== 'QUALITY_REJECTED'
-                  ).length;
-                  const loadPct = Math.min(100, Math.round((waiting / c.capacity_per_day) * 100));
-                  return (
-                    <div key={c.id} className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-bold text-sm text-stone-900">{c.name}</h4>
-                          <p className="text-xs text-stone-500">{c.district}, {c.state}</p>
-                        </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${loadPct >= 80 ? 'bg-red-100 text-red-800' : loadPct >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                          {c.status}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 p-3 bg-stone-50 rounded-2xl text-xs">
-                        <div><span className="text-stone-400 block text-[10px] uppercase">Total Bookings</span><span className="font-bold text-stone-900 text-base">{centreCount}</span></div>
-                        <div><span className="text-stone-400 block text-[10px] uppercase">Waiting in Queue</span><span className="font-bold text-amber-700 text-base">{waiting}</span></div>
-                      </div>
-                      {/* Load bar */}
-                      <div>
-                        <div className="flex justify-between text-[10px] text-stone-500 mb-1">
-                          <span>Centre Load</span><span className="font-bold">{loadPct}%</span>
-                        </div>
-                        <div className="w-full bg-stone-200 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className={`h-1.5 rounded-full transition-all ${loadPct >= 80 ? 'bg-red-500' : loadPct >= 50 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                            style={{ width: `${loadPct}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="text-[11px] text-stone-500 flex justify-between">
-                        <span>Active Counters: {c.counters_active}</span>
-                        <span>Capacity: {c.capacity_per_day}/day</span>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-base text-stone-900">Procurement Centres Under Jurisdiction</h3>
+                <span className="text-xs text-stone-500 font-semibold">{centres.length} Centres</span>
+              </div>
+              <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-stone-50 border-b border-stone-200 text-stone-500 uppercase">
+                    <tr>
+                      <th className="p-3 text-left font-bold">Centre Name</th>
+                      <th className="p-3 text-left font-bold">District</th>
+                      <th className="p-3 text-right font-bold">Bookings</th>
+                      <th className="p-3 text-right font-bold">Queue</th>
+                      <th className="p-3 text-right font-bold">Load</th>
+                      <th className="p-3 text-left font-bold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {centres.map((c) => {
+                      const centreCount = registrations.filter(r => r.centre_id === c.id).length;
+                      const waiting = registrations.filter(
+                        r => r.centre_id === c.id && r.procurement_status !== 'PROCUREMENT_COMPLETED' && r.procurement_status !== 'QUALITY_REJECTED'
+                      ).length;
+                      const loadPct = Math.min(100, Math.round((waiting / c.capacity_per_day) * 100));
+                      return (
+                        <tr key={c.id} className="hover:bg-stone-50">
+                          <td className="p-3 font-bold text-stone-900">{c.name}</td>
+                          <td className="p-3 text-stone-500">{c.district}</td>
+                          <td className="p-3 text-right font-bold text-stone-900">{centreCount}</td>
+                          <td className="p-3 text-right font-bold text-amber-700">{waiting}</td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <div className="w-16 bg-stone-200 rounded-full h-1.5 overflow-hidden">
+                                <div className={`h-1.5 rounded-full ${loadPct >= 80 ? 'bg-red-500' : loadPct >= 50 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${loadPct}%` }} />
+                              </div>
+                              <span className={`font-bold ${loadPct >= 80 ? 'text-red-700' : loadPct >= 50 ? 'text-amber-700' : 'text-emerald-700'}`}>{loadPct}%</span>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${loadPct >= 80 ? 'bg-red-100 text-red-800' : loadPct >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                              {c.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
+
           </div>
         )}
 
@@ -482,6 +512,64 @@ export const GovernmentDashboard: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════
+            OPERATOR APPROVALS
+        ═══════════════════════════════════════════════════════ */}
+        {govtView === 'operator_approvals' && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm">
+              <h2 className="text-xl font-black text-stone-900">Mandi Operator Approvals</h2>
+              <p className="text-xs text-stone-500">Review and authorize new operator registrations</p>
+            </div>
+
+            {loadingOperators ? (
+              <div className="bg-white p-8 rounded-3xl border border-stone-200 text-center">
+                <Loader2 className="w-8 h-8 text-emerald-600 animate-spin mx-auto mb-2" />
+                <p className="text-stone-500">Loading operators...</p>
+              </div>
+            ) : operatorsList.length > 0 ? (
+              <div className="space-y-4">
+                {operatorsList.map(op => {
+                  const c = centres.find(cen => cen.id === op.centre_id);
+                  return (
+                    <div key={op.id} className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div>
+                        <h3 className="font-bold text-stone-900 text-lg flex items-center gap-2">
+                          {op.name}
+                          {op.designation === 'APPROVED' ? (
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">APPROVED</span>
+                          ) : (
+                            <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">PENDING APPROVAL</span>
+                          )}
+                        </h3>
+                        <div className="text-xs text-stone-500 mt-1 space-y-0.5">
+                          <p>📱 {op.phone} &nbsp; ✉️ {op.email}</p>
+                          <p>📍 {c ? `${c.name} (${c.district})` : 'Unknown Centre'} • ID: {op.employee_id || 'N/A'}</p>
+                        </div>
+                      </div>
+                      
+                      {op.designation !== 'APPROVED' && (
+                        <button 
+                          onClick={() => handleApproveOperator(op.id)}
+                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          Approve Operator
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center">
+                <CheckCircle2 className="w-12 h-12 text-stone-300 mx-auto mb-3" />
+                <p className="font-bold text-stone-900">No operators found.</p>
+                <p className="text-xs text-stone-500 mt-1">Operator registrations will appear here for approval.</p>
+              </div>
+            )}
           </div>
         )}
 

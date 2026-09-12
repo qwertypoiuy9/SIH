@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+﻿import React, { useState, useEffect, useCallback } from 'react';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import { fetchWeather, fetchWeatherByLocation } from '../../services/weatherService';
 import { WeatherData } from '../../types';
 import {
@@ -28,7 +28,7 @@ const SEVERITY_COLORS = {
 };
 
 export const WeatherDashboard: React.FC = () => {
-  const { authSession, language } = useKisanFlow();
+  const { authSession, language } = useKisanQ();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

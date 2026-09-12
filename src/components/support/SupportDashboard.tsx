@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useKisanFlow } from '../../context/KisanFlowContext';
+﻿import React, { useState } from 'react';
+import { useKisanQ } from '../../context/KisanFlowContext';
 import {
   Headphones,
   Search,
@@ -59,7 +59,7 @@ export const SupportDashboard: React.FC = () => {
     payments,
     language,
     setIsVoiceAssistantOpen,
-  } = useKisanFlow();
+  } = useKisanQ();
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -167,7 +167,7 @@ export const SupportDashboard: React.FC = () => {
         <div className="p-5 border-b border-purple-900">
           <div className="flex items-center gap-2 mb-1">
             <Headphones className="w-5 h-5 text-purple-400" />
-            <span className="font-black text-lg tracking-tight text-white">KisanFlow</span>
+            <span className="font-black text-lg tracking-tight text-white">KisanQ</span>
             <span className="text-[10px] bg-purple-800 text-purple-200 px-2 py-0.5 rounded-full font-bold uppercase">Support</span>
           </div>
           <p className="text-xs text-purple-400 font-medium">AI Helpline Agent Portal</p>

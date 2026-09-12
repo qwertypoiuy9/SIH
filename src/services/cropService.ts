@@ -1,5 +1,5 @@
 /**
- * KisanFlow Crop Service
+ * KisanQ Crop Service
  * Provides district-based, regionally relevant crop recommendations.
  * Falls back to a comprehensive hardcoded dataset when Supabase is unavailable.
  */
@@ -41,7 +41,7 @@ export const INDIA_CROPS: Crop[] = [
   // Vegetables & Horticulture (no fixed MSP but supported for procurement)
   { id: 'onion', name: 'Onion', local_name: 'ఉల్లిపాయ / प्याज / ಈರುಳ್ಳಿ / வெங்காயம்', category: 'Horticulture', msp_per_quintal: 0, icon: '🧅', season: 'Rabi', primary_states: ['Maharashtra', 'Madhya Pradesh', 'Karnataka', 'Gujarat', 'Rajasthan', 'Bihar'] },
   { id: 'tomato', name: 'Tomato', local_name: 'టమాటో / टमाटर / ಟೊಮ್ಯಾಟೊ / தக்காளி', category: 'Horticulture', msp_per_quintal: 0, icon: '🍅', season: 'Year-round', primary_states: ['Andhra Pradesh', 'Karnataka', 'Maharashtra', 'Gujarat', 'Odisha'] },
-  { id: 'chilli', name: 'Chilli', local_name: 'మిర్చి / मिर्च / ಮೆಣಸಿನಕಾಯಿ / மிளகாய்', category: 'Horticulture', msp_per_quintal: 0, icon: '🌶️', season: 'Kharif', primary_states: ['Andhra Pradesh', 'Telangana', 'Karnataka', 'Maharashtra', 'Rajasthan', 'West Bengal'] },
+
   { id: 'turmeric', name: 'Turmeric', local_name: 'పసుపు / हल्दी / ಅರಿಶಿನ / மஞ்சள்', category: 'Spice', msp_per_quintal: 0, icon: '🫚', season: 'Kharif', primary_states: ['Andhra Pradesh', 'Telangana', 'Tamil Nadu', 'Karnataka', 'Odisha', 'West Bengal'] },
   { id: 'ginger', name: 'Ginger', local_name: 'అల్లం / अदरक / ಶುಂಠಿ / இஞ்சி', category: 'Spice', msp_per_quintal: 0, icon: '🫚', season: 'Kharif', primary_states: ['Kerala', 'Karnataka', 'Odisha', 'Assam', 'West Bengal', 'Arunachal Pradesh'] },
   // Fruits

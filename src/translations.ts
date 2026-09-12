@@ -1,4 +1,4 @@
-import { Language, LanguageCode } from './types';
+﻿import { Language, LanguageCode } from './types';
 
 export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
@@ -14,7 +14,7 @@ export interface TranslationDictionary {
   tagline: string;
   secondaryTagline: string;
   heroDescription: string;
-  useKisanFlow: string;
+  useKisanQ: string;
   usePhoneCall: string;
   getAsst: string;
   accessibilityNotice: string;
@@ -25,7 +25,7 @@ export interface TranslationDictionary {
   liveQueue: string;
   farmersAhead: string;
   estimatedWait: string;
-  talkToKisanFlow: string;
+  talkToKisanQ: string;
   talkSubtitle: string;
   holdToSpeak: string;
   listening: string;
@@ -83,11 +83,11 @@ export interface TranslationDictionary {
 
 export const translations: Record<LanguageCode, TranslationDictionary> = {
   te: {
-    appName: 'కిసాన్ ఫ్లో (KisanFlow)',
+    appName: 'కిసాన్ ఫ్లో (KisanQ)',
     tagline: 'ఒకే సేకరణ వ్యవస్థ. ప్రతి రైతుకు. ఏ ఫోన్ అయినా. ఏ భాష అయినా.',
     secondaryTagline: 'స్మార్ట్‌ఫోన్ లేదా? ఫర్వాలేదు!',
     heroDescription: 'మీ సేకరణ స్లాట్ బుక్ చేసుకోండి, క్యూను ట్రాక్ చేయండి, టర్న్ అలర్ట్‌లు పొందండి మరియు కేంద్రం వద్ద అనవసరంగా వేచి ఉండకుండా సేకరణ, చెల్లింపు స్థితిని తెలుసుకోండి.',
-    useKisanFlow: '📱 కిసాన్ ఫ్లో ఉపయోగించండి',
+    useKisanQ: '📱 కిసాన్ ఫ్లో ఉపయోగించండి',
     usePhoneCall: '📞 ఫోన్ కాల్ ఉపయోగించండి',
     getAsst: '🤝 సహాయం పొందండి (CSC/రైతు కేంద్రం)',
     accessibilityNotice: 'స్మార్ట్‌ఫోన్ లేదా? ఫర్వాలేదు.',
@@ -98,7 +98,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     liveQueue: 'ప్రత్యక్ష క్యూ (Live Queue)',
     farmersAhead: 'మంది రైతులు మీ ముందు ఉన్నారు',
     estimatedWait: 'అంచనా వేచి ఉండే సమయం',
-    talkToKisanFlow: 'కిసాన్ ఫ్లో తో మాట్లాడండి',
+    talkToKisanQ: 'కిసాన్ ఫ్లో తో మాట్లాడండి',
     talkSubtitle: 'సహజంగా మాట్లాడండి. మీకు మేము సహాయం చేస్తాము.',
     holdToSpeak: 'మాట్లాడటానికి నొక్కండి',
     listening: 'వింటున్నాము... దయచేసి మాట్లాడండి',
@@ -154,11 +154,11 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     ivrOpt7: '7 — సహాయం / ఆపరేటర్‌తో మాట్లాడటానికి',
   },
   hi: {
-    appName: 'किसानफ्लो (KisanFlow)',
+    appName: 'किसानफ्लो (KisanQ)',
     tagline: 'एक खरीद प्रणाली। हर किसान। कोई भी फोन। कोई भी भाषा।',
     secondaryTagline: 'स्मार्टफोन नहीं है? कोई बात नहीं।',
     heroDescription: 'अपनी खरीद स्लॉट बुक करें, लाइव कतार ट्रैक करें, अपनी बारी के अलर्ट पाएं और खरीद व भुगतान की स्थिति जानें — केंद्र पर बिना अनावश्यक प्रतीक्षा के।',
-    useKisanFlow: '📱 किसानफ्लो का उपयोग करें',
+    useKisanQ: '📱 किसानफ्लो का उपयोग करें',
     usePhoneCall: '📞 फोन कॉल का उपयोग करें',
     getAsst: '🤝 सहायता प्राप्त करें (CSC/पंचायत)',
     accessibilityNotice: 'स्मार्टफोन नहीं है? कोई बात नहीं।',
@@ -169,7 +169,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     liveQueue: 'लाइव कतार स्थिति',
     farmersAhead: 'किसान आपसे आगे हैं',
     estimatedWait: 'अनुमानित प्रतीक्षा समय',
-    talkToKisanFlow: 'किसानफ्लो से बात करें',
+    talkToKisanQ: 'किसानफ्लो से बात करें',
     talkSubtitle: 'स्वाभाविक रूप से बोलें। हम आपकी पूरी मदद करेंगे।',
     holdToSpeak: 'बोलने के लिए दबाएं',
     listening: 'सुन रहे हैं... कृपया बोलें',
@@ -225,22 +225,22 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     ivrOpt7: '7 — सहायता / अधिकारी से बात करें',
   },
   en: {
-    appName: 'KisanFlow',
+    appName: 'KisanQ',
     tagline: 'One Procurement System. Every Farmer. Any Phone. Any Language.',
     secondaryTagline: 'No Smartphone? No Problem.',
     heroDescription: 'Book your procurement slot, track your queue, receive turn alerts, and follow procurement and payment status — without waiting unnecessarily at the centre.',
-    useKisanFlow: '📱 Use KisanFlow Web/PWA',
+    useKisanQ: '📱 Use KisanQ Web/PWA',
     usePhoneCall: '📞 Use Phone Call',
     getAsst: '🤝 Get Assisted Service',
     accessibilityNotice: 'No Smartphone? No Problem.',
-    accessibilitySub: 'Call KisanFlow helpline and use your phone keypad or voice in your mother tongue.',
+    accessibilitySub: 'Call KisanQ helpline and use your phone keypad or voice in your mother tongue.',
     namaste: 'Namaste, Farmer 👋',
     activeBooking: 'ACTIVE BOOKING',
     tokenNumber: 'Token Number',
     liveQueue: 'LIVE QUEUE',
     farmersAhead: 'Farmers Ahead',
     estimatedWait: 'Estimated Wait',
-    talkToKisanFlow: 'TALK TO KISANFLOW',
+    talkToKisanQ: 'TALK TO KisanQ',
     talkSubtitle: 'Speak naturally. We will help you in your preferred language.',
     holdToSpeak: 'Hold to Speak',
     listening: 'Listening... Please speak',
@@ -283,8 +283,8 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     callCenterNumber: '1800-425-4747',
     prototypeHelpline: 'Prototype Helpline (Toll-Free)',
     helplineAvailable: 'Helpline Available',
-    callNow: 'Call KisanFlow',
-    ivrWelcome: 'Welcome to KisanFlow.',
+    callNow: 'Call KisanQ',
+    ivrWelcome: 'Welcome to KisanQ.',
     ivrSelectLanguage: 'Select language: 1 for Telugu, 2 for Hindi, 3 for English',
     ivrSelectService: 'Please select the required service:',
     ivrOpt1: '1 — To book a slot',
@@ -296,11 +296,11 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     ivrOpt7: '7 — Help / Talk to an operator',
   },
   kn: {
-    appName: 'ಕಿಸಾನ್‌ಫ್ಲೋ (KisanFlow)',
+    appName: 'ಕಿಸಾನ್‌ಫ್ಲೋ (KisanQ)',
     tagline: 'ಒಂದೇ ಖರೀದಿ ವ್ಯವಸ್ಥೆ. ಪ್ರತಿಯೊಬ್ಬ ರೈತ. ಯಾವುದೇ ಫೋನ್. ಯಾವುದೇ ಭಾಷೆ.',
     secondaryTagline: 'ಸ್ಮಾರ್ಟ್‌ಫೋನ್ ಇಲ್ವಾ? ಚಿಂತೆಯಿಲ್ಲ.',
     heroDescription: 'ನಿಮ್ಮ ಖರೀದಿ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸಿ, ಸರತಿ ಸಾಲು ಗಮನಿಸಿ, ನಿಮ್ಮ ಸರದಿಯ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಡೆಯಿರಿ ಮತ್ತು ಪಾವತಿ ಸ್ಥಿತಿಯನ್ನು ತಿಳಿಯಿರಿ.',
-    useKisanFlow: '📱 ಕಿಸಾನ್‌ಫ್ಲೋ ಬಳಸಿ',
+    useKisanQ: '📱 ಕಿಸಾನ್‌ಫ್ಲೋ ಬಳಸಿ',
     usePhoneCall: '📞 ಫೋನ್ ಕರೆ ಬಳಸಿ',
     getAsst: '🤝 ಸಹಾಯ ಪಡೆಯಿರಿ',
     accessibilityNotice: 'ಸ್ಮಾರ್ಟ್‌ಫೋನ್ ಇಲ್ವಾ? ಚಿಂತೆಯಿಲ್ಲ.',
@@ -311,7 +311,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     liveQueue: 'ಲೈವ್ ಸರತಿ ಸಾಲು',
     farmersAhead: 'ರೈತರು ನಿಮ್ಮ ಮುಂದಿದ್ದಾರೆ',
     estimatedWait: 'ಅಂದಾಜು ಕಾಯುವ ಸಮಯ',
-    talkToKisanFlow: 'ಕಿಸಾನ್‌ಫ್ಲೋ ಜೊತೆ ಮಾತನಾಡಿ',
+    talkToKisanQ: 'ಕಿಸಾನ್‌ಫ್ಲೋ ಜೊತೆ ಮಾತನಾಡಿ',
     talkSubtitle: 'ನಿಮ್ಮ ಮಾತಿನಲ್ಲಿ ಮಾತನಾಡಿ. ನಾವು ಸಹಾಯ ಮಾಡುತ್ತೇವೆ.',
     holdToSpeak: 'ಮಾತನಾಡಲು ಒತ್ತಿ ಹಿಡಿಯಿರಿ',
     listening: 'ಕೇಳುತ್ತಿದ್ದೇವೆ... ಮಾತನಾಡಿ',
@@ -367,11 +367,11 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     ivrOpt7: '7 — ಸಹಾಯ / ಆಪರೇಟರ್ ಜೊತೆ ಮಾತನಾಡಿ',
   },
   ta: {
-    appName: 'கிசான்ஃப்ளோ (KisanFlow)',
+    appName: 'கிசான்ஃப்ளோ (KisanQ)',
     tagline: 'ஒரே கொள்முதல் தளம். ஒவ்வொரு விவசாயிக்கும். எந்த போனும். எந்த மொழியும்.',
     secondaryTagline: 'ஸ்மார்ட்போன் இல்லையா? கவலை வேண்டாம்.',
     heroDescription: 'உங்கள் கொள்முதல் நேரத்தை பதிவு செய்யுங்கள், வரிசையை கண்காணிக்கவும், மையத்தில் வீணாக காத்திருக்காமல் நிலவரத்தை அறியவும்.',
-    useKisanFlow: '📱 கிசான்ஃப்ளோ பயன்படுத்தவும்',
+    useKisanQ: '📱 கிசான்ஃப்ளோ பயன்படுத்தவும்',
     usePhoneCall: '📞 தொலைபேசி அழைப்பு',
     getAsst: '🤝 நேரடி உதவி பெறுக',
     accessibilityNotice: 'ஸ்மார்ட்போன் இல்லையா? கவலை வேண்டாம்.',
@@ -382,7 +382,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     liveQueue: 'நேரடி வரிசை',
     farmersAhead: 'விவசாயிகள் உங்களுக்கு முன் உள்ளனர்',
     estimatedWait: 'எதிர்பார்க்கப்படும் காத்திருப்பு நேரம்',
-    talkToKisanFlow: 'கிசான்ஃப்ளோவுடன் பேசுங்கள்',
+    talkToKisanQ: 'கிசான்ஃப்ளோவுடன் பேசுங்கள்',
     talkSubtitle: 'இயல்பாக பேசுங்கள். நாங்கள் உங்களுக்கு உதவுவோம்.',
     holdToSpeak: 'பேச அழுத்தவும்',
     listening: 'கேட்கிறோம்... பேசுங்கள்',
@@ -438,11 +438,11 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     ivrOpt7: '7 — உதவி / அதிகாரியிடம் பேச',
   },
   bn: {
-    appName: 'কিসানফ্লো (KisanFlow)',
+    appName: 'কিসানফ্লো (KisanQ)',
     tagline: 'এক সংগ্রহ ব্যবস্থা। প্রতিটি কৃষক। যে কোনো ফোন। যে কোনো ভাষা।',
     secondaryTagline: 'স্মার্টফোন নেই? কোনো সমস্যা নেই।',
     heroDescription: 'আপনার সংগ্রহের স্লট বুক করুন, লাইভ কিউ ট্র্যাক করুন এবং কেন্দ্রে অপ্রয়োজনীয় অপেক্ষা ছাড়াই অর্থপ্রদানের স্থিতি জানুন।',
-    useKisanFlow: '📱 কিসানফ্লো ব্যবহার করুন',
+    useKisanQ: '📱 কিসানফ্লো ব্যবহার করুন',
     usePhoneCall: '📞 ফোন কল ব্যবহার করুন',
     getAsst: '🤝 সহায়তা নিন',
     accessibilityNotice: 'স্মার্টফোন নেই? কোনো সমস্যা নেই।',
@@ -453,7 +453,7 @@ export const translations: Record<LanguageCode, TranslationDictionary> = {
     liveQueue: 'লাইভ কিউ',
     farmersAhead: 'জন কৃষক আপনার আগে আছেন',
     estimatedWait: 'আনুমানিক অপেক্ষার সময়',
-    talkToKisanFlow: 'কিসানফ্লোর সাথে কথা বলুন',
+    talkToKisanQ: 'কিসানফ্লোর সাথে কথা বলুন',
     talkSubtitle: 'সহজ ভাষায় কথা বলুন। আমরা সাহায্য করব।',
     holdToSpeak: 'বলতে প্রেস করে রাখুন',
     listening: 'শুনছি... অনুগ্রহ করে বলুন',

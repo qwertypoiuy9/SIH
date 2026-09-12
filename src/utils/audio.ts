@@ -1,4 +1,4 @@
-// KisanFlow Audio Engine
+﻿// KisanQ Audio Engine
 // 1. Web Speech API with proper BCP-47 language enforcement (Telugu, Hindi, Kannada, Tamil, Bengali, English)
 // 2. Web Audio API DTMF dual-tone frequency generator
 // 3. Speech-to-Text (STT) for all 6 languages
@@ -387,7 +387,7 @@ class SoundController {
       };
 
       recognition.onerror = (event: any) => {
-        console.warn('[KisanFlow STT]', event.error);
+        console.warn('[KisanQ STT]', event.error);
         // 'no-speech' is non-fatal - don't show error to user
         if (event.error !== 'no-speech' && handlers.onError) {
           handlers.onError(event.error);
