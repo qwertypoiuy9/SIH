@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import {
   ActivePortalView,
@@ -63,9 +63,10 @@ interface KisanFlowContextType {
   authSession: AuthSession;
   supabaseSession: Session | null;
   authLoading: boolean;
-  loginUser: (profile: UserProfile) => void; // kept for legacy operator/govt tabs
+  loginUser: (profile: UserProfile) => void;
   logoutUser: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  setNavigate: (fn: (path: string) => void) => void;
 
   // Database config
   supabaseConfig: SupabaseConfig;
@@ -148,13 +149,17 @@ export const KisanFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
 
   // ── Navigate to the correct portal after auth ─────────────────────────
-  const navigateByRole = useCallback((role: string | null, portal?: ActivePortalView) => {
-    if (portal) { setActivePortal(portal); return; }
-    if (role === 'farmer') { setActivePortal('farmer'); setFarmerView('dashboard'); }
-    else if (role === 'operator') { setActivePortal('operator'); setOperatorView('dashboard'); }
-    else if (role === 'government') { setActivePortal('government'); setGovtView('overview'); }
-    else if (role === 'support') { setActivePortal('support'); setSupportView('dashboard'); }
-    else setActivePortal('login');
+  // navigateRef is set by AppContent once the Router is mounted
+  const navigateRef = useRef<((path: string) => void) | null>(null);
+
+  const navigateByRole = useCallback((role: string | null) => {
+    const nav = navigateRef.current;
+    if (!nav) return;
+    if (role === 'farmer') { setFarmerView('dashboard'); nav('/farmer'); }
+    else if (role === 'operator') { setOperatorView('dashboard'); nav('/operator'); }
+    else if (role === 'government') { setGovtView('overview'); nav('/government'); }
+    else if (role === 'support') { setSupportView('dashboard'); nav('/support'); }
+    else nav('/login');
   }, []);
 
   // ── Load profile from Supabase and update auth state ─────────────────
@@ -254,11 +259,16 @@ export const KisanFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     refreshPaymentsImpl();
   }, [navigateByRole]);
 
+  const setNavigate = useCallback((fn: (path: string) => void) => {
+    navigateRef.current = fn;
+  }, []);
+
   const logoutUser = useCallback(async () => {
     await signOut();
     setAuthSession({ isAuthenticated: false, user: null, role: null });
     setSupabaseSession(null);
     setActivePortal('login');
+    navigateRef.current?.('/login');
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -397,7 +407,7 @@ export const KisanFlowProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       govtView, setGovtView,
       supportView, setSupportView,
       authSession, supabaseSession, authLoading,
-      loginUser, logoutUser, refreshProfile,
+      loginUser, logoutUser, refreshProfile, setNavigate,
       supabaseConfig, saveSupabaseSettings, clearDatabase,
       centres, crops, refreshCentres, refreshCrops,
       registrations, refreshRegistrations,

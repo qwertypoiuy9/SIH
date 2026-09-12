@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { KisanFlowProvider, useKisanFlow } from './context/KisanFlowContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Navbar } from './components/Navbar';
@@ -12,10 +12,22 @@ import { SupportDashboard } from './components/support/SupportDashboard';
 import { VoiceAssistantModal } from './components/farmer/VoiceAssistantModal';
 import { PhoneSimulatorModal } from './components/phone/PhoneSimulatorModal';
 
-// ── Portal redirect: reads auth role and sends to the correct dashboard ──
+// ── Wires React Router's navigate into the context so context can redirect ──
+const NavigateBridge: React.FC = () => {
+  const navigate = useNavigate();
+  const { setNavigate } = useKisanFlow();
+  useEffect(() => { setNavigate(navigate); }, [navigate, setNavigate]);
+  return null;
+};
+
+// ── After login redirect based on role ──────────────────────────────────────
 const PortalRedirect: React.FC = () => {
   const { authSession, authLoading } = useKisanFlow();
-  if (authLoading) return null;
+  if (authLoading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
   if (!authSession.isAuthenticated) return <Navigate to="/login" replace />;
   const role = authSession.role;
   if (role === 'operator') return <Navigate to="/operator" replace />;
@@ -25,19 +37,35 @@ const PortalRedirect: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
+  const { authSession, authLoading } = useKisanFlow();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-semibold text-stone-500">Loading KisanFlow...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900 font-sans flex flex-col">
+      <NavigateBridge />
       <Navbar />
       <main className="flex-1">
         <Routes>
-          {/* Public routes */}
+          {/* Public */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={
+            authSession.isAuthenticated ? <Navigate to="/portal" replace /> : <LoginPage />
+          } />
 
-          {/* Portal redirect after login */}
+          {/* Role redirect */}
           <Route path="/portal" element={<PortalRedirect />} />
 
-          {/* Protected role routes */}
+          {/* Protected dashboards */}
           <Route path="/farmer/*" element={
             <ProtectedRoute allowedRoles={['farmer']}>
               <FarmerDashboard />
@@ -64,7 +92,7 @@ const AppContent: React.FC = () => {
         </Routes>
       </main>
 
-      {/* Global modals — available on all authenticated pages */}
+      {/* Global modals */}
       <VoiceAssistantModal />
       <PhoneSimulatorModal />
     </div>

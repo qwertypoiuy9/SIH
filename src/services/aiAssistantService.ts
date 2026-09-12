@@ -154,32 +154,74 @@ function buildGeminiPrompt(query: string, ctx: AssistantContext): string {
   const langMeta = LANG_METADATA[ctx.language] || LANG_METADATA.te;
   const token = ctx.activeRegistration ? `#${ctx.activeRegistration.token_number}` : 'None';
   const stage = ctx.activeRegistration ? ctx.activeRegistration.current_stage : 'No active registration';
-  const centre = ctx.activeRegistration?.centre_name || ctx.centres[0]?.name || 'Lakshmipur Procurement Centre';
-  const cropsList = ctx.crops.map(c => `${c.name.split(' ')[0]}: ₹${c.msp_per_quintal}/Qtl`).join(', ');
 
-  return `You are KisanFlow AI, an empathetic agricultural assistant for Indian farmers under the MSP procurement scheme.
-CRITICAL INSTRUCTION: Respond ENTIRELY in ${langMeta.name} (${langMeta.nativeName}). Do not answer in English unless requested.
-Keep responses under 4 sentences. Answer accurately using the real database records below.
+  // Location context
+  const farmerLat = ctx.farmer?.latitude;
+  const farmerLng = ctx.farmer?.longitude;
+  const locationStr = farmerLat && farmerLng
+    ? `${ctx.farmer?.village || ''}, ${ctx.farmer?.district || ''} (GPS: ${farmerLat.toFixed(4)}, ${farmerLng.toFixed(4)})`
+    : `${ctx.farmer?.village || ''}, ${ctx.farmer?.district || 'Unknown'}`;
 
-Database Records:
-- Farmer Name: ${ctx.farmer?.name || 'Farmer'}
-- Village: ${ctx.farmer?.village || 'N/A'}, District: ${ctx.farmer?.district || 'N/A'}
-- Active Token: ${token}
-- Allocated PPC: ${centre}
-- Current Stage: ${stage}
-- Farmers in Queue: ${ctx.queueDepth}
-- Crop: ${ctx.activeRegistration?.crop || 'N/A'} (${ctx.activeRegistration?.quantity_quintals || 0} Quintals)
-- Payment Status: ${ctx.payment?.status || 'No payment recorded yet'}
-- Payment Amount: ₹${ctx.payment?.amount || 0}
+  // Nearest centres with full detail
+  const nearestCentres = ctx.centres
+    .filter(c => c.distance_km < 999)
+    .slice(0, 5)
+    .map((c, i) =>
+      `${i + 1}. ${c.name} | ${c.district}, ${c.state} | ${c.distance_km} km away | Status: ${c.status} | Queue: ${c.current_queue} | Crops: ${(c.accepted_crops || []).join(', ') || 'All'} | Hours: ${c.open_hours} | ${c.is_open ? 'OPEN NOW' : 'CLOSED'}`
+    ).join('\n') || 'No nearby centres loaded yet.';
 
-MSP Rates 2026-27: ${cropsList}
-Quality Standard: Max 17% moisture (FAQ). Grains must be free from foreign matter.
-Toll-Free Helpline: 1800-425-4747
-J-Form: Official procurement receipt enabling DBT payment to Aadhaar-seeded bank account.
-PM-KISAN: Eligible if land < 2 hectares (5 acres). ₹6,000/year direct credit.
+  // Crops with MSP prices (sorted by relevance)
+  const cropLines = ctx.crops
+    .filter(c => c.msp_per_quintal > 0)
+    .slice(0, 15)
+    .map(c => `${c.name} (${c.local_name?.split('/')[0]?.trim() || ''}): ₹${c.msp_per_quintal}/Qtl — ${c.category}, ${c.season} season`)
+    .join('\n') || 'MSP data loading...';
 
-Farmer Query in ${langMeta.name}: "${query}"
-Answer politely and helpfully in ${langMeta.nativeName}:`;
+  // Payment details
+  const paymentInfo = ctx.payment
+    ? `Status: ${ctx.payment.status} | Amount: ₹${ctx.payment.amount?.toLocaleString('en-IN')} | Crop: ${ctx.payment.quantity} Qtl @ ₹${ctx.payment.msp_price}/Qtl`
+    : 'No payment recorded yet';
+
+  return `You are KisanFlow AI, a knowledgeable and empathetic agricultural assistant for Indian farmers under the MSP government procurement scheme.
+
+CRITICAL INSTRUCTION: Respond ENTIRELY in ${langMeta.name} (${langMeta.nativeName}). Never answer in English unless the farmer explicitly asks in English.
+Be concise: keep responses under 5 sentences. Use simple farmer-friendly language. Include specific data from the records below.
+
+═══ FARMER PROFILE ═══
+Name: ${ctx.farmer?.name || 'Farmer'}
+Location: ${locationStr}
+Preferred Language: ${langMeta.nativeName}
+Land: ${ctx.farmer?.land_holding_acres || 'N/A'} acres
+
+═══ ACTIVE REGISTRATION ═══
+Token: ${token}
+Allocated Centre: ${ctx.activeRegistration?.centre_name || ctx.centres[0]?.name || 'Not assigned'}
+Crop: ${ctx.activeRegistration?.crop || 'N/A'} — ${ctx.activeRegistration?.quantity_quintals || 0} Quintals
+Current Stage: ${stage}
+Farmers ahead in queue: ${ctx.queueDepth}
+
+═══ PAYMENT ═══
+${paymentInfo}
+
+═══ NEAREST PROCUREMENT CENTRES (sorted by distance) ═══
+${nearestCentres}
+
+═══ MSP RATES 2026-27 (Government Official) ═══
+${cropLines}
+
+═══ KEY RULES & SCHEMES ═══
+Quality Standard: Max moisture 17% for paddy, 14% for wheat (FAQ). Free from foreign matter.
+J-Form: Official procurement receipt. Required for DBT payment to Aadhaar-linked bank account.
+PM-KISAN: Eligible if land < 2 hectares (5 acres). ₹6,000/year in 3 instalments of ₹2,000.
+PM Fasal Bima Yojana: Crop insurance for natural disasters.
+Kisan Credit Card: Low-interest farm credit up to ₹3 lakh at 7% p.a.
+Toll-Free Helpline: 1800-425-4747 (24x7)
+
+═══ FARMER QUERY ═══
+Language: ${langMeta.name}
+Query: "${query}"
+
+Respond helpfully in ${langMeta.nativeName}. If asked about nearest centre, use the distance data above. If asked about price, use the MSP data above. Always cite the specific centre name or price figure.`;
 }
 
 // ============================================================
