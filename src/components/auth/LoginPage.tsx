@@ -336,6 +336,7 @@ export const LoginPage: React.FC = () => {
               </div>
 
               {authMode === 'register' && (
+                <>
                   <LabelInput label="Full Name *" value={staffName} onChange={setStaffName} placeholder="Enter your name" required />
                   <LabelInput label="Mobile Number" value={staffPhone} onChange={setStaffPhone} placeholder="9848000000" type="tel" icon={<Phone className="w-3.5 h-3.5 text-stone-400" />} />
                   
