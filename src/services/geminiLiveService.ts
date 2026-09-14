@@ -1,4 +1,4 @@
-﻿/**
+/**
  * KisanQ — Gemini Live API Service
  * Real-time bidirectional audio conversation with Gemini.
  *
@@ -23,7 +23,10 @@ const RESPONSE_SAMPLE_RATE = 24000; // Gemini outputs 24kHz PCM
 
 function getGeminiKey(): string {
   return (
-    (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_GEMINI_API_KEY || ''
+    (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_GEMINI_API_KEY ||
+    (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '') ||
+    localStorage.getItem('KisanQ_gemini_api_key') ||
+    ''
   );
 }
 

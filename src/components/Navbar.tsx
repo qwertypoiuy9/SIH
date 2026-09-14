@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useKisanQ } from '../context/KisanFlowContext';
 import { SUPPORTED_LANGUAGES } from '../translations';
@@ -35,7 +35,9 @@ export const Navbar: React.FC = () => {
 
           <button onClick={() => setIsVoiceAssistantOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-all cursor-pointer">
             <Mic className="w-3.5 h-3.5 text-emerald-700 animate-pulse" />
-            <span className="hidden sm:inline">AI Assistant</span>
+            <span className="hidden sm:inline">
+              {language === 'te' ? 'AI అసిస్టెంట్' : language === 'hi' ? 'AI सहायक' : language === 'kn' ? 'AI ಸಹಾಯಕ' : language === 'ta' ? 'AI உதவியாளர்' : language === 'bn' ? 'AI সহকারী' : 'AI Assistant'}
+            </span>
           </button>
 
           <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-xl border border-stone-200">
@@ -53,7 +55,9 @@ export const Navbar: React.FC = () => {
               </button>
             </div>
           ) : (
-            <button onClick={() => navigate('/login')} className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold cursor-pointer">Login</button>
+            <button onClick={() => navigate('/login')} className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-bold cursor-pointer">
+              {language === 'te' ? 'లాగిన్' : language === 'hi' ? 'लॉगिन' : 'Login'}
+            </button>
           )}
         </div>
       </div>
