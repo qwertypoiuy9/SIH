@@ -401,11 +401,6 @@ export const LoginPage: React.FC = () => {
             </>
           )}
         </div>
-      </div>
-
-      <p className="text-[10px] text-stone-400 mt-4 text-center max-w-sm">
-        🔒 Advanced Authentication · Enterprise-grade Security · Location via OpenStreetMap Nominatim
-      </p>
     </div>
   );
 };
