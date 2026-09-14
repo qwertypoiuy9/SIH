@@ -394,7 +394,7 @@ export const OperatorDashboard: React.FC = () => {
             {/* KPI Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
               {[
-                { label: 'Registered Today', value: todayRegistrations, color: 'text-stone-900', sub: 'Total in Supabase' },
+                { label: 'Registered Today', value: todayRegistrations, color: 'text-stone-900', sub: 'Total Registered' },
                 { label: 'Waiting at Gate', value: waitingCount, color: 'text-amber-700', sub: 'Pending Gate Entry' },
                 { label: 'Being Processed', value: inProcessingCount, color: 'text-blue-700', sub: 'Active in yard' },
                 { label: 'Completed', value: completedCount, color: 'text-emerald-700', sub: 'J-Forms Issued' },
@@ -738,7 +738,7 @@ export const OperatorDashboard: React.FC = () => {
             <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex flex-wrap justify-between items-center gap-3">
               <div>
                 <h2 className="text-xl font-black text-stone-900">All Farmer Registrations</h2>
-                <p className="text-xs text-stone-500">Centre: <span className="font-bold text-amber-700">{centre?.name || 'All Centres'}</span> · Live from Supabase</p>
+                <p className="text-xs text-stone-500">Centre: <span className="font-bold text-amber-700">{centre?.name || 'All Centres'}</span> · Live updates</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">{centreRegs.length} registrations</span>
@@ -783,7 +783,7 @@ export const OperatorDashboard: React.FC = () => {
                 </div>
                 <p className="font-bold text-stone-900 text-sm">No registrations found for this centre</p>
                 <p className="text-xs text-stone-500">Centre: <span className="font-semibold">{centre?.name}</span></p>
-                <p className="text-xs text-stone-400">Farmers who book a slot at this centre will appear here automatically via Supabase Realtime.</p>
+                <p className="text-xs text-stone-400">Farmers who book a slot at this centre will appear here automatically.</p>
                 <button onClick={() => refreshRegistrations()} className="mt-2 text-xs font-bold text-amber-700 underline cursor-pointer">Click to refresh</button>
               </div>
             )}

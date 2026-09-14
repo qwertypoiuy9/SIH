@@ -1,4 +1,4 @@
-﻿// DemoTourBar — legacy demo stepper, preserved but simplified
+// DemoTourBar — legacy demo stepper, preserved but simplified
 import React, { useState } from 'react';
 import { useKisanQ } from '../context/KisanFlowContext';
 import { PlayCircle } from 'lucide-react';
@@ -46,7 +46,7 @@ export const DemoTourBar: React.FC = () => {
 
       {isExpanded && (
         <div className="max-w-7xl mx-auto mt-2 pt-2 border-t border-stone-800 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-stone-400">
-          <div className="bg-stone-800/60 p-2 rounded"><p className="font-bold text-stone-200">Real Supabase Auth</p><p>Email/password signup with full address & geocoding.</p></div>
+          <div className="bg-stone-800/60 p-2 rounded"><p className="font-bold text-stone-200">Secure Authentication</p><p>Email/password signup with full address & geocoding.</p></div>
           <div className="bg-stone-800/60 p-2 rounded"><p className="font-bold text-stone-200">Dynamic Centres</p><p>Procurement centres loaded from DB with Leaflet map.</p></div>
           <div className="bg-stone-800/60 p-2 rounded"><p className="font-bold text-stone-200">Weather API</p><p>OpenWeatherMap with farmer advisory in regional language.</p></div>
           <div className="bg-stone-800/60 p-2 rounded"><p className="font-bold text-stone-200">AI Voice Assistant</p><p>Gemini 2.5 Flash with real slot booking via speech.</p></div>

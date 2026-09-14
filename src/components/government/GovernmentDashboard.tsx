@@ -310,7 +310,7 @@ export const GovernmentDashboard: React.FC = () => {
             <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-black text-stone-900">All State Procurement Registrations</h2>
-                <p className="text-xs text-stone-500">Live multi-centre database records from Supabase</p>
+                <p className="text-xs text-stone-500">Live multi-centre database records</p>
               </div>
               <span className="text-xs bg-blue-100 text-blue-900 font-bold px-3 py-1 rounded-full">{registrations.length} Total</span>
             </div>

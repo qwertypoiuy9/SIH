@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useKisanQ } from '../context/KisanFlowContext';
 import { translations } from '../translations';
@@ -43,7 +43,7 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           <p className="text-base sm:text-lg text-stone-600 max-w-2xl mx-auto font-medium">
-            Streamlining government crop procurement with database-backed token sequencing, live queue tracking, 5-stage mandi processing, and immediate Direct Benefit Transfer (DBT).
+            Streamlining government crop procurement with secure token sequencing, live queue tracking, 5-stage mandi processing, and immediate Direct Benefit Transfer (DBT).
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -142,7 +142,7 @@ export const LandingPage: React.FC = () => {
               5-Stage Regulated Procurement Lifecycle
             </h3>
             <p className="text-xs text-stone-400 mt-1">
-              From arrival to direct bank credit — fully tracked and auditable in Supabase.
+              From arrival to direct bank credit — fully tracked and auditable.
             </p>
           </div>
 
