@@ -25,6 +25,8 @@ import {
   ShieldAlert,
   Zap,
   RefreshCw,
+  Phone,
+  Mail,
 } from 'lucide-react';
 import { GovernmentSidebarView, UserProfile } from '../../types';
 import { getBottleneckPredictions, BottleneckPrediction } from '../../services/aiAssistantService';
@@ -625,8 +627,8 @@ export const GovernmentDashboard: React.FC = () => {
                           <p>📍 {c ? `${c.name} (${c.district})` : 'Unknown Centre'} • ID: {op.employee_id || 'N/A'}</p>
                         </div>
                       </div>
-                      
-                      <button 
+
+                      <button
                         onClick={() => handleApproveOperator(op.id)}
                         className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer whitespace-nowrap"
                       >
