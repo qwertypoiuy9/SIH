@@ -35,6 +35,7 @@ export interface UserProfile {
   employee_id?: string;
   centre_id?: string;
   designation?: string;
+  rejection_reason?: string;
 }
 
 export interface AuthSession {

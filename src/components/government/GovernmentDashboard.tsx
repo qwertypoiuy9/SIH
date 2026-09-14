@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { GovernmentSidebarView, UserProfile } from '../../types';
 import { getBottleneckPredictions, BottleneckPrediction } from '../../services/aiAssistantService';
-import { getAllOperators, approveOperator } from '../../utils/supabaseAuth';
+import { getAllOperators, approveOperator, rejectOperator } from '../../utils/supabaseAuth';
 import { WeatherDashboard } from '../weather/WeatherDashboard';
 
 const SEVERITY_STYLES: Record<BottleneckPrediction['severity'], { badge: string; border: string; bg: string; icon: string }> = {
@@ -104,6 +104,16 @@ export const GovernmentDashboard: React.FC = () => {
     const success = await approveOperator(userId);
     if (success) {
       setOperatorsList(prev => prev.map(op => op.id === userId ? { ...op, designation: 'APPROVED' } : op));
+    }
+  };
+
+  const handleRejectOperator = async (userId: string) => {
+    const reason = window.prompt("Enter reason for rejection:");
+    if (reason === null) return; // User cancelled
+    
+    const success = await rejectOperator(userId, reason || 'No reason provided');
+    if (success) {
+      setOperatorsList(prev => prev.map(op => op.id === userId ? { ...op, designation: 'REJECTED', rejection_reason: reason || 'No reason provided' } : op));
     }
   };
 
@@ -611,9 +621,9 @@ export const GovernmentDashboard: React.FC = () => {
                 <Loader2 className="w-8 h-8 text-emerald-600 animate-spin mx-auto mb-2" />
                 <p className="text-stone-500 text-sm font-bold">Loading pending operators...</p>
               </div>
-            ) : operatorsList.filter(op => op.designation !== 'APPROVED').length > 0 ? (
+            ) : operatorsList.filter(op => op.designation !== 'APPROVED' && op.designation !== 'REJECTED').length > 0 ? (
               <div className="space-y-4">
-                {operatorsList.filter(op => op.designation !== 'APPROVED').map(op => {
+                {operatorsList.filter(op => op.designation !== 'APPROVED' && op.designation !== 'REJECTED').map(op => {
                   const c = centres.find(cen => cen.id === op.centre_id);
                   return (
                     <div key={op.id} className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -627,13 +637,20 @@ export const GovernmentDashboard: React.FC = () => {
                           <p>📍 {c ? `${c.name} (${c.district})` : 'Unknown Centre'} • ID: {op.employee_id || 'N/A'}</p>
                         </div>
                       </div>
-
-                      <button
-                        onClick={() => handleApproveOperator(op.id)}
-                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer whitespace-nowrap"
-                      >
-                        Approve Operator
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => handleRejectOperator(op.id)}
+                          className="px-4 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-bold rounded-xl text-sm transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          Reject
+                        </button>
+                        <button 
+                          onClick={() => handleApproveOperator(op.id)}
+                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          Approve Operator
+                        </button>
+                      </div>
                     </div>
                   );
                 })}

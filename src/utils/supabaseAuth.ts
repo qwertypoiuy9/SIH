@@ -390,3 +390,12 @@ export async function approveOperator(userId: string): Promise<boolean> {
   }
   return true;
 }
+
+export async function rejectOperator(userId: string, reason: string): Promise<boolean> {
+  const { error } = await supabase.from('profiles').update({ designation: 'REJECTED', rejection_reason: reason }).eq('id', userId);
+  if (error) {
+    console.error('Error rejecting operator:', error);
+    return false;
+  }
+  return true;
+}
