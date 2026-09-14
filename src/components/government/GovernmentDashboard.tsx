@@ -84,8 +84,10 @@ export const GovernmentDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchOperators();
-  }, [fetchOperators]);
+    if (govtView === 'operator_approvals' || govtView === 'operators') {
+      fetchOperators();
+    }
+  }, [govtView, fetchOperators]);
 
   const handleApproveOperator = async (userId: string) => {
     const targetOp = operatorsList.find(op => op.id === userId);
@@ -291,7 +293,7 @@ export const GovernmentDashboard: React.FC = () => {
         {/* ═══════════════════════════════════════════════════════
             2. ALL REGISTRATIONS TABLE
         ═══════════════════════════════════════════════════════ */}
-        {(govtView === 'all_registrations' || govtView === 'farmers' || govtView === 'live_queue' || govtView === 'operators' || govtView === 'procurement_monitoring') && (
+        {(govtView === 'all_registrations' || govtView === 'farmers' || govtView === 'live_queue' || govtView === 'procurement_monitoring') && (
           <div className="max-w-6xl mx-auto space-y-6">
             <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex justify-between items-center">
               <div>
@@ -525,34 +527,98 @@ export const GovernmentDashboard: React.FC = () => {
         )}
 
         {/* ═══════════════════════════════════════════════════════
-            OPERATOR APPROVALS
+            MANDI OPERATORS
         ═══════════════════════════════════════════════════════ */}
-        {govtView === 'operator_approvals' && (
+        {govtView === 'operators' && (
           <div className="max-w-5xl mx-auto space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm">
-              <h2 className="text-xl font-black text-stone-900">Mandi Operator Approvals</h2>
-              <p className="text-xs text-stone-500">Review and authorize new operator registrations</p>
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black text-stone-900">Mandi Operators</h2>
+                <p className="text-xs text-stone-500">Approved operators managing procurement centres</p>
+              </div>
+              <button
+                onClick={fetchOperators}
+                className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingOperators ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
             </div>
 
             {loadingOperators ? (
               <div className="bg-white p-8 rounded-3xl border border-stone-200 text-center">
                 <Loader2 className="w-8 h-8 text-emerald-600 animate-spin mx-auto mb-2" />
-                <p className="text-stone-500">Loading operators...</p>
+                <p className="text-stone-500 text-sm font-bold">Loading approved operators...</p>
               </div>
-            ) : operatorsList.length > 0 ? (
+            ) : operatorsList.filter(op => op.designation === 'APPROVED').length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {operatorsList.filter(op => op.designation === 'APPROVED').map(op => {
+                  const c = centres.find(cen => cen.id === op.centre_id);
+                  return (
+                    <div key={op.id} className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm flex flex-col justify-between">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-bold text-stone-900 text-lg">{op.name}</h3>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">APPROVED OPERATOR</span>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg">
+                          {op.name.charAt(0)}
+                        </div>
+                      </div>
+                      <div className="text-xs text-stone-500 mt-4 space-y-2">
+                        <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-stone-400" /> {op.phone}</p>
+                        <p className="flex items-center gap-2"><Mail className="w-4 h-4 text-stone-400" /> {op.email}</p>
+                        <p className="flex items-center gap-2"><Building className="w-4 h-4 text-stone-400" /> {c ? `${c.name} (${c.district})` : 'Unknown Centre'}</p>
+                        <p className="flex items-center gap-2"><User className="w-4 h-4 text-stone-400" /> ID: {op.employee_id || 'N/A'}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center">
+                <Users className="w-12 h-12 text-stone-300 mx-auto mb-3" />
+                <p className="font-bold text-stone-900">No approved operators found.</p>
+                <p className="text-xs text-stone-500 mt-1">Approve pending operators from the Operator Approvals tab.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════
+            OPERATOR APPROVALS
+        ═══════════════════════════════════════════════════════ */}
+        {govtView === 'operator_approvals' && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black text-stone-900">Mandi Operator Approvals</h2>
+                <p className="text-xs text-stone-500">Review and authorize new operator registrations</p>
+              </div>
+              <button
+                onClick={fetchOperators}
+                className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingOperators ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+
+            {loadingOperators ? (
+              <div className="bg-white p-8 rounded-3xl border border-stone-200 text-center">
+                <Loader2 className="w-8 h-8 text-emerald-600 animate-spin mx-auto mb-2" />
+                <p className="text-stone-500 text-sm font-bold">Loading pending operators...</p>
+              </div>
+            ) : operatorsList.filter(op => op.designation !== 'APPROVED').length > 0 ? (
               <div className="space-y-4">
-                {operatorsList.map(op => {
+                {operatorsList.filter(op => op.designation !== 'APPROVED').map(op => {
                   const c = centres.find(cen => cen.id === op.centre_id);
                   return (
                     <div key={op.id} className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div>
                         <h3 className="font-bold text-stone-900 text-lg flex items-center gap-2">
                           {op.name}
-                          {op.designation === 'APPROVED' ? (
-                            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">APPROVED</span>
-                          ) : (
-                            <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">PENDING APPROVAL</span>
-                          )}
+                          <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">PENDING APPROVAL</span>
                         </h3>
                         <div className="text-xs text-stone-500 mt-1 space-y-0.5">
                           <p>📱 {op.phone} &nbsp; ✉️ {op.email}</p>
@@ -560,14 +626,12 @@ export const GovernmentDashboard: React.FC = () => {
                         </div>
                       </div>
                       
-                      {op.designation !== 'APPROVED' && (
-                        <button 
-                          onClick={() => handleApproveOperator(op.id)}
-                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer whitespace-nowrap"
-                        >
-                          Approve Operator
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => handleApproveOperator(op.id)}
+                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer whitespace-nowrap"
+                      >
+                        Approve Operator
+                      </button>
                     </div>
                   );
                 })}
@@ -575,7 +639,7 @@ export const GovernmentDashboard: React.FC = () => {
             ) : (
               <div className="bg-white rounded-3xl p-8 border border-stone-200 text-center">
                 <CheckCircle2 className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-                <p className="font-bold text-stone-900">No operators found.</p>
+                <p className="font-bold text-stone-900">No pending operators found.</p>
                 <p className="text-xs text-stone-500 mt-1">Operator registrations will appear here for approval.</p>
               </div>
             )}
