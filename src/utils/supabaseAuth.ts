@@ -263,10 +263,10 @@ export async function signUpWithEmail(params: SignUpParams): Promise<{
     email: params.email,
     is_approved: params.role === 'operator' ? false : true,
     address: params.address,
-    village: coords?.village || params.village,
-    mandal: coords?.mandal || params.mandal,
-    district: coords?.district || params.district,
-    state: coords?.state || params.state,
+    village: params.village,
+    mandal: params.mandal,
+    district: params.district,
+    state: params.state,
     pincode: params.pincode,
     latitude: coords?.lat,
     longitude: coords?.lng,
@@ -349,7 +349,7 @@ export async function signInWithEmail(email: string, password: string, expectedR
     
     // Check if expected role matches the user's actual profile role
     if (expectedRole) {
-      const profileData = await getProfile(data.user.id);
+      const profileData = await fetchProfile(data.user.id);
       if (profileData && profileData.role !== expectedRole) {
         // Log them out immediately if they are trying to log into the wrong portal
         await supabase.auth.signOut();
