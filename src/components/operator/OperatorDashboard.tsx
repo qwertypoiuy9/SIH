@@ -756,7 +756,8 @@ export const OperatorDashboard: React.FC = () => {
                   <thead className="bg-stone-50 text-stone-500 uppercase border-b border-stone-200">
                     <tr>
                       <th className="p-4">Token</th><th className="p-4">Farmer Name</th><th className="p-4">Mobile</th>
-                      <th className="p-4">Crop</th><th className="p-4">Quantity</th><th className="p-4">Vehicle</th>
+                      <th className="p-4">Crop</th><th className="p-4">Quantity</th><th className="p-4">Slot Date</th>
+                      <th className="p-4">Slot Time</th><th className="p-4">Vehicle</th>
                       <th className="p-4">Stage</th><th className="p-4">Status</th>
                     </tr>
                   </thead>
@@ -768,6 +769,18 @@ export const OperatorDashboard: React.FC = () => {
                         <td className="p-4 font-mono text-stone-500">{r.phone}</td>
                         <td className="p-4">{r.crop}</td>
                         <td className="p-4 font-bold">{r.quantity_quintals} Qtl</td>
+                        <td className="p-4">
+                          <span className="inline-flex items-center gap-1 text-stone-700">
+                            <span className="text-[10px]">📅</span>
+                            <span className="font-semibold">{r.preferred_date || '—'}</span>
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 font-bold text-[10px]">
+                            <Clock className="w-3 h-3" />
+                            {r.preferred_time || '—'}
+                          </span>
+                        </td>
                         <td className="p-4 font-mono text-stone-500">{r.vehicle_number}</td>
                         <td className="p-4 font-bold text-amber-800">{r.current_stage.replace(/_/g, ' ')}</td>
                         <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.procurement_status === 'PROCUREMENT_COMPLETED' ? 'bg-emerald-100 text-emerald-700' : r.procurement_status === 'QUALITY_REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'}`}>{r.procurement_status.replace(/_/g, ' ')}</span></td>

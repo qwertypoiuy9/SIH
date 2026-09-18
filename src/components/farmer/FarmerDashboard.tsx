@@ -38,6 +38,12 @@ export const FarmerDashboard: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(25);
   const [centreId, setCentreId] = useState<string>('centre_lakshmipur');
   const [vehicleNumber, setVehicleNumber] = useState<string>('TS-03-TR-8812');
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  });
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('09:00 AM');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingSuccessToken, setBookingSuccessToken] = useState<number | null>(null);
   const [bookingSmartMsg, setBookingSmartMsg] = useState<string>('');
@@ -111,12 +117,52 @@ export const FarmerDashboard: React.FC = () => {
     }
   }, [crop, quantity]);
 
+  // Generate time slots from 7 AM to 5 PM
+  const timeSlots = [
+    '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM',
+    '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+    '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+    '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+    '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
+    '05:00 PM',
+  ];
+
+  // Count booked slots per time for the selected date & centre
+  const getSlotBookingCount = (time: string) => {
+    return registrations.filter(
+      r => r.centre_id === centreId &&
+           r.preferred_date === selectedDate &&
+           r.preferred_time === time &&
+           r.procurement_status !== 'PROCUREMENT_COMPLETED' &&
+           r.procurement_status !== 'QUALITY_REJECTED'
+    ).length;
+  };
+
+  // Get min date (today) and max date (14 days from now)
+  const today = new Date().toISOString().split('T')[0];
+  const maxDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    return d.toISOString().split('T')[0];
+  })();
+
   const handleBookSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (quantity <= 0) return;
+    if (!selectedDate || !selectedTimeSlot) {
+      alert('Please select a date and time slot.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const newReg = await bookFarmerSlot({ crop, quantity, centreId, vehicleNumber });
+      const newReg = await bookFarmerSlot({
+        crop,
+        quantity,
+        centreId,
+        vehicleNumber,
+        preferredDate: selectedDate,
+        preferredTime: selectedTimeSlot,
+      });
       setBookingSuccessToken(newReg.token_number);
 
       // Generate smart notification in farmer's language
@@ -341,6 +387,8 @@ export const FarmerDashboard: React.FC = () => {
                   <p><strong>Farmer:</strong> {authSession.user?.name}</p>
                   <p><strong>Crop & Quantity:</strong> {crop} — {quantity} Quintals</p>
                   <p><strong>Centre:</strong> {centres.find(c => c.id === centreId)?.name}</p>
+                  <p><strong>📅 Slot Date:</strong> {selectedDate}</p>
+                  <p><strong>🕐 Slot Time:</strong> {selectedTimeSlot}</p>
                 </div>
                 <div className="flex justify-center gap-3 pt-2">
                   <button onClick={() => { setBookingSuccessToken(null); setBookingSmartMsg(''); setFarmerView('my_token'); }} className="px-6 py-3 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer">View My Token Slip →</button>
@@ -404,10 +452,78 @@ export const FarmerDashboard: React.FC = () => {
                   />
                 </div>
 
+                {/* ── DATE PICKER ── */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase mb-2">4. Select Slot Date</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      required
+                      value={selectedDate}
+                      min={today}
+                      max={maxDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full px-3.5 py-3 rounded-xl border border-stone-300 text-sm focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white"
+                    />
+                  </div>
+                  <p className="text-[11px] text-stone-500 mt-1 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    You can book up to 14 days in advance
+                  </p>
+                </div>
+
+                {/* ── TIME SLOT PICKER ── */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 uppercase mb-2">5. Select Time Slot</label>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                    {timeSlots.map((slot) => {
+                      const bookedCount = getSlotBookingCount(slot);
+                      const isFull = bookedCount >= 10;
+                      const isSelected = selectedTimeSlot === slot;
+                      const isPopular = bookedCount >= 5;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={isFull}
+                          onClick={() => setSelectedTimeSlot(slot)}
+                          className={`relative p-2.5 rounded-xl border text-center transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
+                            isSelected
+                              ? 'bg-emerald-800 text-white font-bold border-emerald-900 shadow-md ring-2 ring-emerald-500/30'
+                              : isFull
+                              ? 'bg-red-50 border-red-200 text-red-400'
+                              : isPopular
+                              ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-800'
+                              : 'bg-stone-50 hover:bg-emerald-50 border-stone-200 text-stone-700 hover:border-emerald-400'
+                          }`}
+                        >
+                          <Clock className={`w-3.5 h-3.5 mx-auto mb-1 ${isSelected ? 'text-emerald-200' : isFull ? 'text-red-300' : 'text-stone-400'}`} />
+                          <span className="text-xs font-bold block">{slot}</span>
+                          {bookedCount > 0 && (
+                            <span className={`text-[9px] block mt-0.5 ${
+                              isSelected ? 'text-emerald-200' : isFull ? 'text-red-400' : isPopular ? 'text-amber-600' : 'text-stone-400'
+                            }`}>
+                              {isFull ? 'FULL' : `${bookedCount} booked`}
+                            </span>
+                          )}
+                          {!isFull && bookedCount === 0 && (
+                            <span className={`text-[9px] block mt-0.5 ${isSelected ? 'text-emerald-200' : 'text-emerald-500'}`}>Available</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex flex-wrap gap-3 mt-2 text-[10px] text-stone-500">
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-50 border border-stone-200"></span> Available</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-50 border border-amber-300"></span> Filling Up</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-50 border border-red-200"></span> Full</span>
+                  </div>
+                </div>
+
                 {/* Centre Selection with AI Recommendation */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-stone-700 uppercase">4. Procurement Centre (PPC)</label>
+                    <label className="text-xs font-bold text-stone-700 uppercase">6. Procurement Centre (PPC)</label>
                     <button
                       type="button"
                       onClick={loadSlotRecommendation}
@@ -529,6 +645,8 @@ export const FarmerDashboard: React.FC = () => {
                     { label: 'Farmer', value: activeReg.farmer_name },
                     { label: 'Phone', value: activeReg.phone, mono: true },
                     { label: 'Crop & Qty', value: `${activeReg.crop} — ${activeReg.quantity_quintals} Qtl` },
+                    { label: '📅 Slot Date', value: activeReg.preferred_date },
+                    { label: '🕐 Slot Time', value: activeReg.preferred_time },
                     { label: 'Vehicle', value: activeReg.vehicle_number, mono: true },
                     { label: 'Queue Ahead', value: `${farmersAhead} farmers`, color: 'text-amber-700' },
                   ].map((row, i) => (
@@ -696,7 +814,7 @@ export const FarmerDashboard: React.FC = () => {
                     <div>
                       <span className="font-mono font-black text-base text-emerald-800">#{r.token_number}</span>
                       <p className="font-bold text-stone-900 text-sm mt-0.5">{r.crop} — {r.quantity_quintals} Quintals</p>
-                      <p className="text-stone-500">{r.centre_name} · Date: {r.preferred_date}</p>
+                      <p className="text-stone-500">{r.centre_name} · 📅 {r.preferred_date} · 🕐 {r.preferred_time}</p>
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-bold px-3 py-1 rounded-full bg-stone-100 text-stone-800">{r.procurement_status.replace(/_/g, ' ')}</span>
