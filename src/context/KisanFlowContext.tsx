@@ -117,6 +117,10 @@ interface KisanFlowContextType {
   setIsVoiceAssistantOpen: (open: boolean) => void;
   isPhoneModalOpen: boolean;
   setIsPhoneModalOpen: (open: boolean) => void;
+  isTranslating: boolean;
+  setIsTranslating: (translating: boolean) => void;
+  translateApiUrl: string;
+  setTranslateApiUrl: (url: string) => void;
 }
 
 const KisanFlowContext = createContext<KisanFlowContextType | undefined>(undefined);
@@ -147,6 +151,8 @@ export const KisanQProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translateApiUrl, setTranslateApiUrl] = useState('http://localhost:5000/translate');
 
   // ── Navigate to the correct portal after auth ─────────────────────────
   // navigateRef is set by AppContent once the Router is mounted
@@ -442,6 +448,8 @@ export const KisanQProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       markNotificationRead,
       isVoiceAssistantOpen, setIsVoiceAssistantOpen,
       isPhoneModalOpen, setIsPhoneModalOpen,
+      isTranslating, setIsTranslating,
+      translateApiUrl, setTranslateApiUrl,
     }}>
       {children}
     </KisanFlowContext.Provider>

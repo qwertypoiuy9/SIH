@@ -66,6 +66,13 @@ export const FarmerDashboard: React.FC = () => {
 
   const farmerPayments = payments.filter(p => p.farmer_id === authSession.user?.id);
 
+  // Synchronize centreId with available centres so default selection is always valid
+  useEffect(() => {
+    if (centres.length > 0 && !centres.some(c => c.id === centreId)) {
+      setCentreId(centres[0].id);
+    }
+  }, [centres, centreId]);
+
   // ── Load AI slot recommendation when booking tab opens ──
   const loadSlotRecommendation = async () => {
     if (isLoadingRec) return;

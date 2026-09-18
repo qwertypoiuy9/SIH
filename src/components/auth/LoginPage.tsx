@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useKisanQ } from '../../context/KisanFlowContext';
 import { SUPPORTED_LANGUAGES } from '../../translations';
 import {
@@ -19,8 +19,10 @@ const EMPTY_LOC: LocationValue = { state: 'Telangana', district: '', mandal: '',
 export const LoginPage: React.FC = () => {
   const { language, setLanguage, loginUser, centres } = useKisanQ();
   const navigate = useNavigate();
+  const routeLocation = useLocation();
+  const initialTab = (routeLocation.state as { tab?: RoleTab })?.tab;
 
-  const [activeTab, setActiveTab] = useState<RoleTab>('farmer');
+  const [activeTab, setActiveTab] = useState<RoleTab>(initialTab || 'farmer');
   const [authMode,  setAuthMode]  = useState<AuthMode>('login');
   const [showPwd,   setShowPwd]   = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -168,6 +170,64 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const handleDemoLogin = (role: RoleTab) => {
+    if (role === 'farmer') {
+      loginUser({
+        id: 'farmer_demo_1',
+        name: 'Ramesh Goud',
+        phone: '9848012345',
+        email: 'ramesh.farmer@kisanq.gov.in',
+        role: 'farmer',
+        village: 'Lakshmipur',
+        mandal: 'Hanamkonda',
+        district: 'Warangal',
+        state: 'Telangana',
+        pincode: '506001',
+        land_holding_acres: 5.5,
+        preferred_language: language,
+        latitude: 17.9784,
+        longitude: 79.5941,
+      });
+      navigate('/farmer');
+    } else if (role === 'operator') {
+      loginUser({
+        id: 'op_demo_1',
+        name: 'M. V. Rao',
+        phone: '9848055555',
+        email: 'mandi.operator@kisanq.gov.in',
+        role: 'operator',
+        centre_id: centres[0]?.id || 'ctr_wgl_lakshmipur',
+        employee_id: 'OPR-WAR-01',
+        preferred_language: language,
+      });
+      navigate('/operator');
+    } else if (role === 'government') {
+      loginUser({
+        id: 'govt_demo_1',
+        name: 'S. K. Sharma (IAS)',
+        phone: '9848099999',
+        email: 'sksharma.director@kisanq.gov.in',
+        role: 'government',
+        designation: 'Joint Director of Civil Supplies',
+        district: 'Warangal',
+        preferred_language: language,
+      });
+      navigate('/government');
+    } else {
+      loginUser({
+        id: 'support_demo_1',
+        name: 'Priya Reddy',
+        phone: '9848077777',
+        email: 'priya.reddy@kisanq.gov.in',
+        role: 'support',
+        employee_id: 'AGT-WAR-04',
+        designation: 'Senior Helpline Executive',
+        preferred_language: language,
+      });
+      navigate('/support');
+    }
+  };
+
   const isFarmerTab = activeTab === 'farmer';
 
   return (
@@ -180,6 +240,54 @@ export const LoginPage: React.FC = () => {
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-stone-900 tracking-tight">KisanQ</h1>
         <p className="text-sm font-semibold text-emerald-800 mt-1">Smart Mandi Procurement Management System</p>
+      </div>
+
+      {/* Quick Demo Access Bar */}
+      <div className="bg-stone-900 text-white rounded-2xl p-4 shadow-md border border-stone-800 max-w-xl w-full mb-4">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="bg-emerald-500 text-stone-950 font-black px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
+              1-Click Demo
+            </span>
+            <span className="text-xs font-bold text-stone-200">Instant Access (No Login Required)</span>
+          </div>
+          <span className="text-[10px] text-stone-400 hidden sm:inline">Explore all features offline</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button
+            type="button"
+            onClick={() => handleDemoLogin('farmer')}
+            className="p-2.5 bg-stone-800/90 hover:bg-emerald-900/60 hover:border-emerald-500 border border-stone-700 rounded-xl text-left transition-all cursor-pointer group"
+          >
+            <span className="text-xs font-bold block text-stone-100 group-hover:text-emerald-300">👨‍🌾 Farmer</span>
+            <span className="text-[10px] text-stone-400 block truncate">Ramesh (Warangal)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDemoLogin('operator')}
+            className="p-2.5 bg-stone-800/90 hover:bg-amber-900/60 hover:border-amber-500 border border-stone-700 rounded-xl text-left transition-all cursor-pointer group"
+          >
+            <span className="text-xs font-bold block text-stone-100 group-hover:text-amber-300">🏭 Operator</span>
+            <span className="text-[10px] text-stone-400 block truncate">Lakshmipur PPC</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDemoLogin('government')}
+            className="p-2.5 bg-stone-800/90 hover:bg-blue-900/60 hover:border-blue-500 border border-stone-700 rounded-xl text-left transition-all cursor-pointer group"
+          >
+            <span className="text-xs font-bold block text-stone-100 group-hover:text-blue-300">🏛️ Officer</span>
+            <span className="text-[10px] text-stone-400 block truncate">Director (IAS)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDemoLogin('support')}
+            className="p-2.5 bg-stone-800/90 hover:bg-purple-900/60 hover:border-purple-500 border border-stone-700 rounded-xl text-left transition-all cursor-pointer group"
+          >
+            <span className="text-xs font-bold block text-stone-100 group-hover:text-purple-300">🎧 Support</span>
+            <span className="text-[10px] text-stone-400 block truncate">Helpline Agent</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-3xl border border-stone-200 shadow-xl max-w-xl w-full overflow-hidden">

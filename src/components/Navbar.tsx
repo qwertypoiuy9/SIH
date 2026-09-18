@@ -2,11 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useKisanQ } from '../context/KisanFlowContext';
 import { SUPPORTED_LANGUAGES } from '../translations';
-import { Mic, Languages, LogOut, Phone } from 'lucide-react';
+import { Mic, Languages, LogOut, Phone, Loader2 } from 'lucide-react';
 import { LanguageCode } from '../types';
 
 export const Navbar: React.FC = () => {
-  const { language, setLanguage, authSession, logoutUser, setIsVoiceAssistantOpen, setIsPhoneModalOpen } = useKisanQ();
+  const { language, setLanguage, authSession, logoutUser, setIsVoiceAssistantOpen, setIsPhoneModalOpen, isTranslating } = useKisanQ();
   const navigate = useNavigate();
 
   return (
@@ -41,7 +41,11 @@ export const Navbar: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-xl border border-stone-200">
-            <Languages className="w-3.5 h-3.5 text-stone-500" />
+            {isTranslating ? (
+              <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+            ) : (
+              <Languages className="w-3.5 h-3.5 text-stone-500" />
+            )}
             <select value={language} onChange={(e) => setLanguage(e.target.value as LanguageCode)} className="bg-transparent text-xs font-bold text-stone-800 focus:outline-none cursor-pointer">
               {SUPPORTED_LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.nativeName}</option>)}
             </select>

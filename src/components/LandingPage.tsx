@@ -49,6 +49,7 @@ export const LandingPage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
               onClick={() => navigate('/login')}
+              className="px-6 py-3.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-sm rounded-2xl shadow-sm transition-all cursor-pointer flex items-center gap-2"
             >
               <span>Access Portal (లాగిన్ అవ్వండి)</span>
               <ArrowRight className="w-4 h-4" />
@@ -84,7 +85,7 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { state: { tab: 'farmer' } })}
               className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold rounded-xl cursor-pointer"
             >
               Farmer Access →
@@ -103,7 +104,7 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { state: { tab: 'operator' } })}
               className="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl cursor-pointer"
             >
               Operator Access →
@@ -122,7 +123,7 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/login', { state: { tab: 'government' } })}
               className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-bold rounded-xl cursor-pointer"
             >
               Officer Access →

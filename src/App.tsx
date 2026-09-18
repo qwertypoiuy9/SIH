@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { KisanQProvider, useKisanQ } from './context/KisanFlowContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -11,6 +11,7 @@ import { GovernmentDashboard } from './components/government/GovernmentDashboard
 import { SupportDashboard } from './components/support/SupportDashboard';
 import { VoiceAssistantModal } from './components/farmer/VoiceAssistantModal';
 import { PhoneSimulatorModal } from './components/phone/PhoneSimulatorModal';
+import { PageTranslator } from './components/shared/PageTranslator';
 
 // ── Wires React Router's navigate into the context so context can redirect ──
 const NavigateBridge: React.FC = () => {
@@ -53,6 +54,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900 font-sans flex flex-col">
       <NavigateBridge />
+      <PageTranslator />
       <Navbar />
       <main className="flex-1">
         <Routes>
