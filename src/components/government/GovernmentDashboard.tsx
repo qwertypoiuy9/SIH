@@ -4,6 +4,7 @@ import {
   Landmark,
   Users,
   Building,
+  Building2,
   ListOrdered,
   Activity,
   CreditCard,
@@ -141,10 +142,10 @@ export const GovernmentDashboard: React.FC = () => {
     { id: 'overview', label: '🏠 Overview', icon: <Landmark className="w-4 h-4" /> },
     { id: 'farmers', label: '🌾 Farmers', icon: <Users className="w-4 h-4" /> },
     { id: 'operators', label: '👷 Mandi Operators', icon: <CheckCircle2 className="w-4 h-4" /> },
-    { id: 'operator_approvals', label: '✅ Operator Approvals', icon: <CheckCircle2 className="w-4 h-4 text-amber-400" /> },
     { id: 'live_queue', label: '⏱️ Live Queues', icon: <Clock className="w-4 h-4" /> },
     { id: 'all_registrations', label: '📋 All Registrations', icon: <ListOrdered className="w-4 h-4" /> },
     { id: 'procurement_monitoring', label: '⚙️ Procurement Monitoring', icon: <Activity className="w-4 h-4" /> },
+    { id: 'ppc_monitoring', label: '🏢 PPC Slot & Capacity', icon: <Building2 className="w-4 h-4" /> },
     { id: 'payments', label: '💰 Payments', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'reports_analytics', label: '📊 Reports & Analytics', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'bottlenecks', label: '🚨 AI Bottleneck Alerts', icon: <AlertTriangle className="w-4 h-4" /> },
@@ -662,6 +663,33 @@ export const GovernmentDashboard: React.FC = () => {
                 <p className="text-xs text-stone-500 mt-1">Operator registrations will appear here for approval.</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════
+            PPC MONITORING VIEW
+        ═══════════════════════════════════════════════════════ */}
+        {govtView === 'ppc_monitoring' && (
+          <div className="max-w-6xl mx-auto space-y-6">
+            <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm">
+              <h2 className="text-xl font-black text-stone-900">PPC Capacity & Slot Monitoring</h2>
+              <p className="text-xs text-stone-500">View real-time utilization of Procurement Centres</p>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-3xl p-6 text-blue-900 text-sm">
+              <p className="font-bold mb-2">Government PPC Overview is Active.</p>
+              <p>State-wide PPC managers have access to configure individual centre capacities. Government oversight can monitor aggregate statistics, wait times, and bottleneck data.</p>
+              <div className="mt-4 flex gap-4">
+                 <div className="bg-white p-4 rounded-xl border border-blue-100 flex-1">
+                    <p className="text-[10px] uppercase font-bold text-blue-500">Active PPCs</p>
+                    <p className="text-2xl font-black">{centres.filter(c => c.status !== 'CLOSED').length}</p>
+                 </div>
+                 <div className="bg-white p-4 rounded-xl border border-blue-100 flex-1">
+                    <p className="text-[10px] uppercase font-bold text-blue-500">Total System Capacity</p>
+                    <p className="text-2xl font-black">{centres.reduce((sum, c) => sum + (c.capacity_per_day || 0), 0)} qtl/day</p>
+                 </div>
+              </div>
+            </div>
           </div>
         )}
 

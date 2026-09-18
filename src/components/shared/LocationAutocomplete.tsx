@@ -198,9 +198,9 @@ export const LocationAutocomplete: React.FC<Props> = ({ value, onChange, classNa
     if (!district) return;
     const coords = await geocodeMandalOrVillage(village, mandal, district);
     if (coords) {
-      onChange(prev => ({ ...prev, latitude: coords.lat, longitude: coords.lng }));
+      onChange({ ...value, latitude: coords.lat, longitude: coords.lng });
     }
-  }, [onChange]);
+  }, [onChange, value]);
 
   const handleDistrictChange = (d: string) => {
     onChange({ ...value, district: d, mandal: '', village: '', pincode: '', state: 'Telangana' });

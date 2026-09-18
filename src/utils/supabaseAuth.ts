@@ -195,7 +195,7 @@ export interface SignUpParams {
   password: string;
   name: string;
   phone: string;
-  role: 'farmer' | 'operator' | 'government' | 'support';
+  role: UserProfile['role'];
   address?: string;
   village?: string;
   mandal?: string;

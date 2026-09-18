@@ -155,9 +155,57 @@ export const LoginPage: React.FC = () => {
       } else {
         if (!email || !password) { setErrorMsg('Please enter email and password.'); return; }
         
-        if (activeTab === 'government' && email !== 'rakeshpulidindi19@gmail.com') {
-           setErrorMsg('Unauthorized Govt Details: Only approved state officials can log in here.');
-           return;
+        // Preset default accounts fallback / check
+        if (activeTab === 'government') {
+          if (email.trim().toLowerCase() === 'government@gmail.com' && password === 'government@123') {
+            loginUser({
+              id: 'govt_default_1',
+              name: 'State Government Officer',
+              phone: '9848099999',
+              email: 'government@gmail.com',
+              role: 'government',
+              designation: 'Joint Director of Civil Supplies',
+              district: 'Hanamkonda',
+              preferred_language: language,
+            });
+            setSuccessMsg('✓ Login successful! Redirecting…');
+            setTimeout(() => navigate('/government'), 500);
+            return;
+          }
+        }
+
+        if (activeTab === 'operator') {
+          if (email.trim().toLowerCase() === 'operator1@gmail.com' && password === 'operator1@123') {
+            loginUser({
+              id: 'op_default_1',
+              name: 'Hanamkonda Mandi Operator',
+              phone: '9848055551',
+              email: 'operator1@gmail.com',
+              role: 'operator',
+              centre_id: 'ctr_hnk_hanamkonda',
+              employee_id: 'OPR-HNK-01',
+              preferred_language: language,
+            });
+            setSuccessMsg('✓ Login successful! Redirecting…');
+            setTimeout(() => navigate('/operator'), 500);
+            return;
+          }
+
+          if (email.trim().toLowerCase() === 'operator2@gmail.com' && password === 'operator2@123') {
+            loginUser({
+              id: 'op_default_2',
+              name: 'Gadwal Mandi Operator',
+              phone: '9848055552',
+              email: 'operator2@gmail.com',
+              role: 'operator',
+              centre_id: 'ctr_jlg_gadwal',
+              employee_id: 'OPR-GDW-02',
+              preferred_language: language,
+            });
+            setSuccessMsg('✓ Login successful! Redirecting…');
+            setTimeout(() => navigate('/operator'), 500);
+            return;
+          }
         }
 
         const { error } = await signInWithEmail(email, password, activeTab);
@@ -192,24 +240,24 @@ export const LoginPage: React.FC = () => {
     } else if (role === 'operator') {
       loginUser({
         id: 'op_demo_1',
-        name: 'M. V. Rao',
+        name: 'Hanamkonda Mandi Operator',
         phone: '9848055555',
-        email: 'mandi.operator@kisanq.gov.in',
+        email: 'operator1@gmail.com',
         role: 'operator',
-        centre_id: centres[0]?.id || 'ctr_wgl_lakshmipur',
-        employee_id: 'OPR-WAR-01',
+        centre_id: 'ctr_hnk_hanamkonda',
+        employee_id: 'OPR-HNK-01',
         preferred_language: language,
       });
       navigate('/operator');
     } else if (role === 'government') {
       loginUser({
         id: 'govt_demo_1',
-        name: 'S. K. Sharma (IAS)',
+        name: 'State Government Officer',
         phone: '9848099999',
-        email: 'sksharma.director@kisanq.gov.in',
+        email: 'government@gmail.com',
         role: 'government',
         designation: 'Joint Director of Civil Supplies',
-        district: 'Warangal',
+        district: 'Hanamkonda',
         preferred_language: language,
       });
       navigate('/government');
@@ -418,17 +466,19 @@ export const LoginPage: React.FC = () => {
           {/* ── STAFF TABS ── */}
           {!isFarmerTab && (
             <>
-              <div className="flex bg-stone-100 rounded-2xl p-1 gap-1 mb-4">
-                {(['login', 'register'] as const).map(m => (
-                  <button key={m} type="button"
-                    onClick={() => { setAuthMode(m); clear(); }}
-                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                      authMode === m ? 'bg-white text-emerald-800 shadow-sm' : 'text-stone-500 hover:text-stone-800'
-                    }`}>
-                    {m === 'login' ? '🔑 Login' : '📝 New Account'}
-                  </button>
-                ))}
-              </div>
+              {activeTab === 'support' && (
+                <div className="flex bg-stone-100 rounded-2xl p-1 gap-1 mb-4">
+                  {(['login', 'register'] as const).map(m => (
+                    <button key={m} type="button"
+                      onClick={() => { setAuthMode(m); clear(); }}
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                        authMode === m ? 'bg-white text-emerald-800 shadow-sm' : 'text-stone-500 hover:text-stone-800'
+                      }`}>
+                      {m === 'login' ? '🔑 Login' : '📝 New Account'}
+                    </button>
+                  ))}
+                </div>
+              )}
             <form onSubmit={handleStaffAuth} className="space-y-4">
               <div className="pb-3 border-b border-stone-100">
                 <h2 className="text-base font-bold text-stone-900">

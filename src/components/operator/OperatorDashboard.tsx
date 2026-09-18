@@ -45,6 +45,12 @@ import {
   OperatorCopilotSummary,
   JFormIntelligence,
 } from '../../services/aiAssistantService';
+import {
+  PPCConfigView,
+  PPCSlotsView,
+  PPCBookingsView,
+  PPCAnalyticsView
+} from './PPCManagementViews';
 
 export const OperatorDashboard: React.FC = () => {
   const {
@@ -247,47 +253,16 @@ export const OperatorDashboard: React.FC = () => {
     { id: 'j_forms', label: '📄 J-Forms & Receipts', icon: <FileCheck className="w-4 h-4" /> },
     { id: 'payments', label: '💰 Payments', icon: <CreditCard className="w-4 h-4" /> },
     { id: 'reports', label: '📊 Reports', icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'ppc_config', label: '⚙️ PPC Settings', icon: <Settings className="w-4 h-4" /> },
+    { id: 'ppc_slots', label: '📅 Slot Generation', icon: <Clock className="w-4 h-4" /> },
+    { id: 'ppc_bookings', label: '✅ Check-in / Processing', icon: <CheckCircle2 className="w-4 h-4" /> },
+    { id: 'ppc_analytics', label: '📈 PPC Analytics', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'notifications', label: '🔔 Notifications', icon: <Bell className="w-4 h-4" /> },
     { id: 'voice_assistant', label: '🎙️ Voice Assistant', icon: <Mic className="w-4 h-4" /> },
     { id: 'profile', label: '👤 Profile', icon: <User className="w-4 h-4" /> },
   ];
 
-  // ── PENDING APPROVAL CHECK ──
-  if (authSession.user?.role === 'operator' && authSession.user?.designation !== 'APPROVED') {
-    const isRejected = authSession.user?.designation === 'REJECTED';
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          {isRejected ? (
-            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          ) : (
-            <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
-          )}
-          
-          <h2 className={`text-2xl font-black mb-2 ${isRejected ? 'text-red-800' : 'text-stone-800'}`}>
-            {isRejected ? 'Application Rejected' : 'Pending Approval'}
-          </h2>
-          
-          <p className="text-stone-600 mb-4">
-            {isRejected 
-              ? 'Your registration as a Mandi Operator has been rejected by the State Government.' 
-              : 'Your registration as a Mandi Operator is currently pending approval from the State Government. You will be granted access once an official verifies and approves your account.'}
-          </p>
-
-          {isRejected && authSession.user?.rejection_reason && (
-            <div className="bg-red-50 p-4 rounded-xl border border-red-200 mb-6 text-left">
-              <span className="text-[10px] font-bold text-red-800 uppercase tracking-wider block mb-1">Reason for Rejection:</span>
-              <p className="text-sm text-red-900">{authSession.user.rejection_reason}</p>
-            </div>
-          )}
-
-          <button onClick={logoutUser} className="w-full py-3 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-xl transition-colors mt-2 cursor-pointer">
-            Log Out
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // ── PENDING APPROVAL CHECK REMOVED (Direct login enabled for operators) ──
 
   return (
     <div className="min-h-screen flex bg-stone-100 text-stone-900 font-sans">
@@ -933,6 +908,14 @@ export const OperatorDashboard: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* ═══════════════════════════════════════════════════════
+            5. PPC MANAGEMENT VIEWS
+        ═══════════════════════════════════════════════════════ */}
+        {operatorView === 'ppc_config' && <PPCConfigView centre={centre} isPPCManager={authSession.user?.role === 'ppc_manager' || true} />}
+        {operatorView === 'ppc_slots' && <PPCSlotsView centre={centre} isPPCManager={authSession.user?.role === 'ppc_manager' || true} />}
+        {operatorView === 'ppc_bookings' && <PPCBookingsView centre={centre} />}
+        {operatorView === 'ppc_analytics' && <PPCAnalyticsView centre={centre} />}
 
         {/* Profile */}
         {operatorView === 'profile' && (
