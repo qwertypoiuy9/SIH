@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌾 KisanFlow (किसान प्रवाह / కిసాన్ ఫ్లో)
+# 🌾 KisanQ
 ### **Next-Generation Multilingual Smart Mandi Procurement & Dynamic Queue Management System**
 
 > **"One Procurement System. Every Farmer. Any Phone. Any Language."**  
@@ -25,7 +25,7 @@
 ## 📑 Table of Contents
 
 1. [Executive Summary & Problem Statement](#-executive-summary--problem-statement)
-2. [Why KisanFlow? (The Hackathon Value Proposition)](#-why-kisanflow-the-hackathon-value-proposition)
+2. [Why KisanQ? (The Hackathon Value Proposition)](#-why-KisanQ-the-hackathon-value-proposition)
 3. [4-Way Multichannel Inclusivity](#-4-way-multichannel-inclusivity)
 4. [5-Stage Mandi Procurement Pipeline](#-5-stage-mandi-procurement-pipeline)
 5. [Complete Technology Stack & Dependencies](#-complete-technology-stack--dependencies)
@@ -53,13 +53,13 @@ However, the ground reality is plagued by systemic operational bottlenecks:
 4. **Linguistic Isolation:** India speaks hundreds of dialects. Most systems default to English or standard Hindi, leaving Telugu, Kannada, Tamil, or Bengali speakers struggling during crucial procurement transactions.
 5. **Opaque Quality & Direct Benefit Transfer (DBT) Delays:** Moisture grading, weighbridge slips, and J-Forms are often handled via manual paper chits, resulting in uncertainty around final settlement and DBT payment disbursement.
 
-**KisanFlow** was architected to eliminate these barriers entirely through an intelligent, database-backed, multilingual procurement coordination platform.
+**KisanQ** was architected to eliminate these barriers entirely through an intelligent, database-backed, multilingual procurement coordination platform.
 
 ---
 
-## 💡 Why KisanFlow? (The Hackathon Value Proposition)
+## 💡 Why KisanQ? (The Hackathon Value Proposition)
 
-| Traditional Mandi Experience | KisanFlow Modern Procurement Ecosystem |
+| Traditional Mandi Experience | KisanQ Modern Procurement Ecosystem |
 |:---|:---|
 | ❌ Farmers arrive unannounced, creating massive peak-hour choke points | ✅ **Smart Time-Slot Booking & Real-Time Queue Balancing** across centres |
 | ❌ Only accessible via Android/iOS smartphone apps | ✅ **Genuine 4-Way Access:** Web App, Feature-Phone IVR (`1800-425-4747`), Voice AI, Assisted Desk |
@@ -87,13 +87,13 @@ However, the ground reality is plagued by systemic operational bottlenecks:
  (Android / iPhone)       (Basic Keypad Phone)                     (Voice / Spoken)             (No Phone / Help)
          │                         │                                       │                         │
          ▼                         ▼                                       ▼                         ▼
-  KisanFlow Web App         Toll-Free 1800-425-4747                 Multilingual Voice AI     Village Support Desk
+  KisanQ Web App         Toll-Free 1800-425-4747                 Multilingual Voice AI     Village Support Desk
  (Responsive PWA UI)        (Real DTMF Audio IVR)                 (Gemini + Indic Speech)    (Assisted Operator UI)
          │                         │                                       │                         │
          └─────────────────────────┴───────────────────┬───────────────────┴─────────────────────────┘
                                                        │
                                                        ▼
-                                      ☁️ KISANFLOW SUPABASE POSTGRESQL
+                                      ☁️ KisanQ SUPABASE POSTGRESQL
                                       (Unified, Single Source of Truth)
 ```
 
@@ -106,7 +106,7 @@ However, the ground reality is plagued by systemic operational bottlenecks:
 
 ## ⚙️ 5-Stage Mandi Procurement Pipeline
 
-KisanFlow models the exact ground reality of Indian Agricultural Produce Market Committees:
+KisanQ models the exact ground reality of Indian Agricultural Produce Market Committees:
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
@@ -173,7 +173,7 @@ KisanFlow models the exact ground reality of Indian Agricultural Produce Market 
 │            │                      │                      │                   │         │
 │            ▼                      ▼                      ▼                   ▼         │
 │ ┌────────────────────────────────────────────────────────────────────────────────────┐ │
-│ │                         KisanFlowContext (Global State)                            │ │
+│ │                         KisanQContext (Global State)                            │ │
 │ │  - Active User Profile  - Current Language ('te'|'hi'|'kn'|'ta'|'bn'|'en')         │ │
 │ │  - Live Registrations   - Procurement Centres Metrics   - Active Token Record      │ │
 │ └───────────────────────────────────┬────────────────────────────────────────────────┘ │
@@ -227,7 +227,7 @@ KisanFlow models the exact ground reality of Indian Agricultural Produce Market 
 ## 📂 Comprehensive Codebase & Directory Walkthrough
 
 ```
-kisanflow/
+KisanQ/
 ├── public/                               # Static assets and icons
 ├── supabase/
 │   └── schema.sql                        # Production SQL schema, stored procedures, RLS & seeds
@@ -239,7 +239,7 @@ kisanflow/
 │   ├── translations.ts                   # 6-Language localized dictionaries (Telugu, Hindi, etc.)
 │   │
 │   ├── context/
-│   │   └── KisanFlowContext.tsx          # Global reactive application state & Supabase sync
+│   │   └── KisanQContext.tsx          # Global reactive application state & Supabase sync
 │   │
 │   ├── services/
 │   │   ├── aiAssistantService.ts         # Gemini 2.5 Flash API + fallback Indic NLP engine
@@ -408,7 +408,7 @@ Additional relational tables include:
 
 ## 🔊 Audio, DTMF & Multilingual Speech Engine
 
-KisanFlow does not require third-party paid voice APIs to demonstrate natural audio interaction:
+KisanQ does not require third-party paid voice APIs to demonstrate natural audio interaction:
 
 ### 1. DTMF Telephone Keypad Frequencies
 When any key is pressed in the IVR Phone Simulator, the `SoundController` synthesizes standard dual tones directly inside the browser:
@@ -503,8 +503,8 @@ The assistant provides real-time guidance regarding slot status, moisture norms,
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/qwertypoiuy9/SIH.git kisanflow
-cd kisanflow
+git clone https://github.com/qwertypoiuy9/SIH.git KisanQ
+cd KisanQ
 ```
 
 ### 2. Install Dependencies
@@ -529,7 +529,7 @@ VITE_SUPABASE_URL=https://pqconvvuhpvoqutgtmac.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-> **Note:** Even without a Gemini API key, KisanFlow's built-in Indic NLP engine will handle queries across all 6 languages seamlessly.
+> **Note:** Even without a Gemini API key, KisanQ's built-in Indic NLP engine will handle queries across all 6 languages seamlessly.
 
 ### 4. Database Setup (Supabase)
 To run your own Supabase instance:
@@ -589,7 +589,7 @@ A persistent **20-step interactive presentation toolbar** is pinned to the botto
 
 <div align="center">
 
-**🌾 KisanFlow — Empowering India's Farmers Through Technology**  
+**🌾 KisanQ — Empowering India's Farmers Through Technology**  
 *Built with ❤️ for the Smart India Hackathon (SIH)*
 
 </div>
